@@ -88,6 +88,10 @@ public final class EnvConfigsLoader extends BasicObservable {
         return this.getConfig(BigdataUtilsGlobalConstants.USERNAME_CLIENT_KERBEROS_KEYTAB_FILE);
     }
 
+    public String getSaveMode() {
+        return this.getConfig(BigdataUtilsGlobalConstants.SAFE_MODE);
+    }
+
     public String getUserNameClientKrbPrincipal() {
         return this.getConfig(BigdataUtilsGlobalConstants.USERNAME_CLIENT_KERBEROS_PRINCIPAL);
     }

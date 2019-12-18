@@ -20,6 +20,10 @@ public final class BigdataUtilsGlobalConstants {
     public static final String JVM_CONTEXT_PROPERTIES = "context.properties";
     public static final String CLASSPATH_PROPERTIES_FILE_NAME = "env.properties";
 
+    /**
+     * To connect to a cluster in safe mode if it is set to value "true".
+     */
+    public static final String SAFE_MODE = "safe.mode";
     public static final String
             ZOOKEEPER_SERVER_PRINCIPAL = "zookeeper.server.principal";
 
