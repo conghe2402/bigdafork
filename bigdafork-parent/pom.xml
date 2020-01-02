@@ -35,7 +35,7 @@
                         <descriptorRefs>
                             <descriptorRef>bigdafork-specific-assembly</descriptorRef>
                         </descriptorRefs>
-                        <finalName>bigdafork-${project.artifactId}-${project.version}</finalName>
+                        <finalName>${project.artifactId}-${project.version}</finalName>
                         <formats>
                             <format>tar.gz</format>
                         </formats>

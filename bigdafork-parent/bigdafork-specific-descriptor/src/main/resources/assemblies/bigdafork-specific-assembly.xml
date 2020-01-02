@@ -2,13 +2,7 @@
   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
   <id>dist</id>
   <includeBaseDirectory>true</includeBaseDirectory>
-  <baseDirectory>bigdafork-${artifactId}-${version}</baseDirectory>
-  <files>
-    <file>
-      <source>README.md</source>
-      <outputDirectory></outputDirectory>
-    </file>
-  </files>
+  <baseDirectory>${artifactId}-${version}</baseDirectory>
   <fileSets>
     <fileSet>
       <directory>..</directory>

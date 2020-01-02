@@ -10,6 +10,7 @@
     <modules>
         <module>bigdafork-parent</module>
         <module>bigdafork-utils</module>
+        <module>bigdafork-simulation-test</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -31,11 +32,12 @@
         <plugin.compiler.version>3.7.0</plugin.compiler.version>
         <java.compile.version>1.7</java.compile.version>
         <maven.version>3.1.0</maven.version>
+        <maven.assembly.version>2.5.5</maven.assembly.version>
 
+        <hive.jdbc.version>1.3.0</hive.jdbc.version>
         <spark.version>1.5.1</spark.version>
         <scala.version>2.10</scala.version>
-        <slf4j.version>1.7.7</slf4j.version>
-        <log4j.version>1.7.16</log4j.version>
+        <slf4j.version>1.7.5</slf4j.version>
         <log4j.extra>1.1</log4j.extra>
         <lombok.version>1.16.20</lombok.version>
         <hadoop.version>2.7.2</hadoop.version>
@@ -155,6 +157,14 @@
                 <artifactId>fastjson</artifactId>
                 <version>${fastjson.version}</version>
             </dependency>
+            <!-- this is not compatible with FI
+            huawei implement a new version hive-1.3.0 that is not from open source
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-jdbc</artifactId>
+                <version>${hive.jdbc.version}</version>
+            </dependency>
+            -->
         </dependencies>
     </dependencyManagement>
 
