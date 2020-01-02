@@ -71,7 +71,7 @@ public class HadoopLoginDo extends BasicObservable implements IDo<Configuration,
         String principalName = env.getUserNameClientKrbPrincipal();
         String keyTabFilePath = env.getUserNameClientKrbKeyTabFile();
         String krb5ConfFilePath = env.getJSecurityKrb5Conf();
-
+        LOGGER.debug("loginHadoop==");
         //some checks
         if (StringUtils.isBlank(principalName)) {
             throw new InvalidLoginInfoException("no principalName");
@@ -112,6 +112,8 @@ public class HadoopLoginDo extends BasicObservable implements IDo<Configuration,
         UserGroupInformation.setConfiguration(configuration);
 
         try {
+            LOGGER.debug("===== ： " + principalName);
+            LOGGER.debug("===== ： " + keyTabFile.getAbsolutePath());
             UserGroupInformation.loginUserFromKeytab(principalName, keyTabFile.getAbsolutePath());
         } catch (IOException e) {
             //many reasone list
@@ -301,7 +303,6 @@ public class HadoopLoginDo extends BasicObservable implements IDo<Configuration,
                     KEYTAB_KRB_OPTIONS.put("keyTab", keytabfile);
                     KEYTAB_KRB_OPTIONS.put("useKeyTab", "true");
                     KEYTAB_KRB_OPTIONS.put("useTicketCache", useTicketCache ? "true" : "false");
-
                 }
             }
             KEYTAB_KRB_OPTIONS.put("principal", this.principal);
