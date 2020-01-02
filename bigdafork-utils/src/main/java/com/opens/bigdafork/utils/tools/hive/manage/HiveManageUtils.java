@@ -41,7 +41,7 @@ public class HiveManageUtils extends AbstractManageUtils {
     public Map<String, HiveField> getHiveFieldsOfHiveTable(String hiveTableName) {
         LOGGER.debug("getHiveFieldsOfHiveTable...");
         Map<String, HiveField> fieldsMap = new HashMap<>();
-
+        
         try (Connection conn = this.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(String.format("describe %s", hiveTableName))) {
