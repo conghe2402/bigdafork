@@ -1,5 +1,6 @@
 package com.opens.bigdafork.simulation.hive.build;
 
+import com.opens.bigdafork.simulation.common.Constants;
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -41,13 +42,18 @@ public class TableDataBuilder {
         this.env = env;
         this.tableName = tableName;
         this.fieldsMap = fieldsMap;
-        this.datFileName = String.format("%s%s.bd", tableName);
+        this.datFileName = String.format("%s%s.bd", Constants.SIMULATE_PREFIX, tableName);
         this.rolNumber = rolNumber;
     }
 
     public void outputDataFile() {
         LOGGER.info(String.format("begin to generate data file %s for %s",
                 datFileName, tableName));
+        if (fieldsMap == null || fieldsMap.size() <= 0) {
+            LOGGER.info("no fields so do not generate data file!");
+            return;
+        }
+
         File bdf = new File(fileDir + datFileName);
         try (RandomAccessFile acf = new RandomAccessFile(bdf, "rw");
             FileChannel fc = acf.getChannel()) {
@@ -114,7 +120,7 @@ public class TableDataBuilder {
             }
             startId += 1;
         }
-        if (line.charAt(line.length() - 1) == SEP) {
+        if (line.length() > 0 && line.charAt(line.length() - 1) == SEP) {
             line.deleteCharAt(line.length() - 1);
         }
         return line.toString();

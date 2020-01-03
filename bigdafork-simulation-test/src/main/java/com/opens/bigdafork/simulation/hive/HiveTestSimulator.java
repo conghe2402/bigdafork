@@ -20,20 +20,36 @@ public final class HiveTestSimulator {
 
     public static void main(String[] args) {
         LOGGER.info("start......");
-        HiveManageUtils hiveManageUtils = new HiveManageUtils();
-
-        Configuration env = hiveManageUtils.getEnvConfiguration();
         int rowNumber = 10;
+        String[] tableNames = {"TBL_CUST_STAT_WEEK", ""};
 
-        String[] tableNames = {"M_TBL_CUST_STAT_WEEK"};
-        if (args != null && args.length > 1) {
-            tableNames = args[0].split(",");
+        int i = 0;
+        LOGGER.info("params : ");
+        if (args != null && args.length > i) {
+            tableNames = args[i++].split(",");
         }
+        for (String table : tableNames) {
+            LOGGER.info(table);
+        }
+
+        if (args != null && args.length > i) {
+            rowNumber = Integer.parseInt(args[i++]);
+        }
+        LOGGER.info("rowNumber of each table : " + rowNumber);
+
         Set<String> tableSet = new HashSet();
         Collections.addAll(tableSet, tableNames);
 
+        HiveManageUtils hiveManageUtils = new HiveManageUtils();
+        Configuration env = hiveManageUtils.getEnvConfiguration();
+
         Initializer initializer = new Initializer(env, tableSet);
-        initializer.doInitial();
+        tableSet = initializer.doInitial();
+
+        if (tableSet == null || tableSet.size() == 0) {
+            LOGGER.info("no table need initialize...");
+            return;
+        }
 
         for (Iterator<String> it = tableSet.iterator(); it.hasNext();) {
             String tableName = it.next();
