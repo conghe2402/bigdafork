@@ -23,6 +23,10 @@ import java.util.Properties;
 public class HiveManageUtils extends AbstractManageUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(HiveManageUtils.class);
 
+    private static final String PARTI_KEY = "# Partition Information";
+    private static final String COL_KEY = "# col_name";
+    private static final String MK_FLAG = "mk";
+
     private String connUrl = null;
 
     public HiveManageUtils() {
@@ -41,33 +45,45 @@ public class HiveManageUtils extends AbstractManageUtils {
     public Map<String, HiveField> getHiveFieldsOfHiveTable(String hiveTableName) {
         LOGGER.debug("getHiveFieldsOfHiveTable...");
         Map<String, HiveField> fieldsMap = new HashMap<>();
-        
+
         try (Connection conn = this.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(String.format("describe %s", hiveTableName))) {
 
+            //all of rsmd getXXX methods are invalid except getColumnCount.
             ResultSetMetaData rsmd = rs.getMetaData();
-            LOGGER.debug(rsmd.getColumnCount() + "");
+            //LOGGER.debug(rsmd.getColumnCount() + ""); //result is 3;
             int i = 0;
+            String kName = "";
             while (rs.next()) {
-                LOGGER.debug("getTableName : " + rsmd.getTableName(i));
-                LOGGER.debug("getCatalogName : " + rsmd.getCatalogName(i));
-                LOGGER.debug("getColumnLabel : " + rsmd.getColumnLabel(i));
-                LOGGER.debug("getColumnName : " + rsmd.getColumnName(i));
-                LOGGER.debug("getScale : " + rsmd.getScale(i) + "");
-                LOGGER.debug("getPrecision : " + rsmd.getPrecision(i) + "");
-                LOGGER.debug("getCatalogName : " + rsmd.getCatalogName(i) + "");
-                LOGGER.debug("getColumnType : " + rsmd.getColumnType(i) + "");
-                LOGGER.debug("getColumnTypeName : " + rsmd.getColumnTypeName(i) + "");
-                LOGGER.debug("getSchemaName : " + rsmd.getSchemaName(i) + "");
+                kName = rs.getString(1);
+                if (checkKeyNameIsInvalid(kName)) {
+                    continue;
+                }
+                if (kName.startsWith(PARTI_KEY)) {
+                    break;
+                }
                 HiveField field = new HiveField();
-                field.setFieldName(rs.getString(1));
+                field.setFieldName(kName);
                 field.setFieldType(rs.getString(2));
                 field.setIndex(i++);
-                LOGGER.debug(rs.getMetaData().toString());
+                if (MK_FLAG.equals(rs.getString(3))) {
+                    field.setMK(true);
+                }
                 fieldsMap.put(field.getFieldName(), field);
             }
 
+            while (rs.next()) {
+                kName = rs.getString(1);
+                if (checkKeyNameIsInvalid(kName)) {
+                    continue;
+                }
+
+                HiveField partitionField = fieldsMap.get(kName);
+                if (partitionField != null) {
+                    partitionField.setPartition(true);
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             LOGGER.error("getHiveFieldsOfHiveTable, an exception occurs ： " + e.getMessage());
@@ -111,6 +127,9 @@ public class HiveManageUtils extends AbstractManageUtils {
         return connUrl;
     }
 
+    private boolean checkKeyNameIsInvalid(String kName) {
+        return StringUtils.isBlank(kName) || kName.startsWith(COL_KEY);
+    }
     /**
      * Hive field definition.
      */
@@ -118,6 +137,7 @@ public class HiveManageUtils extends AbstractManageUtils {
     public class HiveField {
         private String fieldName;
         private String fieldType;
+        private boolean isMK;
         private int index;
         private boolean isPartition;
     }
