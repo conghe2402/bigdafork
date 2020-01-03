@@ -2,6 +2,7 @@ package com.opens.bigdafork.simulation.hive.build;
 
 import com.google.common.collect.Lists;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,11 +18,12 @@ import java.util.Set;
 public class Initializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(Initializer.class);
     private static final String SIMULATE_PREFIX = "M_";
-    private static final String CONF_FILE = "hive-tables.ini";
+    private static final String CONF_FILE = "/root/workspace/bigdafork-simulation-test-1.0-SNAPSHOT/hive-tables.ini";
     private List<String> tableNeedList = Lists.newArrayList();
-    private Connection connection = null;
+    private Configuration env;
 
-    public Initializer(Set<String> tables) {
+    public Initializer(Configuration env, Set<String> tables) {
+        this.env = env;
         tableNeedList.addAll(tables);
     }
 
@@ -33,27 +35,27 @@ public class Initializer {
         File confFile = new File(CONF_FILE);
         if (!confFile.exists()) {
             LOGGER.warn("no conf file");
+            System.exit(0);
         }
-
-        connection = HiveOpUtils.getConnection();
 
         try(BufferedReader br = new BufferedReader(new InputStreamReader(
                 new FileInputStream(confFile)))) {
-            String cmd = null;
-            while ((cmd = br.readLine()) != null && !cmd.trim().equals("")) {
+            String cmd = br.readLine();
+            while (cmd != null && !cmd.trim().equals("")) {
                 LOGGER.debug(cmd);
                 initialTable(cmd);
             }
 
-        } catch (IOException | SQLException e) {
+        } catch (IOException | SQLException
+                | ClassNotFoundException | IllegalAccessException
+                | InstantiationException e) {
             LOGGER.error(e.getMessage());
             e.printStackTrace();
-        } finally {
-            HiveOpUtils.closeConnection(this.connection);
         }
     }
 
-    private void initialTable(String tableCmd) throws SQLException {
+    private void initialTable(String tableCmd) throws InstantiationException,
+            IllegalAccessException, ClassNotFoundException, SQLException {
         String[] cmds = tableCmd.split(",");
         String tableName = cmds[0];
         if (!isNeedInitial(tableName)) {
@@ -63,12 +65,14 @@ public class Initializer {
         String mkComments = cmds[2];
         String parColName = cmds[3];
         String partComment = cmds[4];
-        HiveOpUtils.execDDL(this.connection, getDropTableSQL(tableName));
-        HiveOpUtils.execDDL(this.connection, getCreateTableSQL(tableName));
-        HiveOpUtils.execDDL(this.connection, getCommentSQL(tableName,
-                mkColName, mkComments));
-        HiveOpUtils.execDDL(this.connection, getCommentSQL(tableName,
-                parColName, partComment));
+        try (Connection connection = HiveOpUtils.getConnection(this.env)) {
+            HiveOpUtils.execDDL(connection, getDropTableSQL(tableName));
+            HiveOpUtils.execDDL(connection, getCreateTableSQL(tableName));
+            HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
+                    mkColName, mkComments));
+            HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
+                    parColName, partComment));
+        }
     }
 
     private String getDropTableSQL(String tableName) {

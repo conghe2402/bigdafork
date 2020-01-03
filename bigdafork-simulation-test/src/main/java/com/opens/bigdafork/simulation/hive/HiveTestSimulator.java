@@ -3,6 +3,7 @@ package com.opens.bigdafork.simulation.hive;
 import com.opens.bigdafork.simulation.hive.build.Initializer;
 import com.opens.bigdafork.simulation.hive.build.TableDataBuilder;
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,7 @@ public final class HiveTestSimulator {
         LOGGER.info("start......");
         HiveManageUtils hiveManageUtils = new HiveManageUtils();
 
+        Configuration env = hiveManageUtils.getEnvConfiguration();
         int rowNumber = 10;
 
         String[] tableNames = {"M_TBL_CUST_STAT_WEEK"};
@@ -30,7 +32,7 @@ public final class HiveTestSimulator {
         Set<String> tableSet = new HashSet();
         Collections.addAll(tableSet, tableNames);
 
-        Initializer initializer = new Initializer(tableSet);
+        Initializer initializer = new Initializer(env, tableSet);
         initializer.doInitial();
 
         for (Iterator<String> it = tableSet.iterator(); it.hasNext();) {
@@ -44,7 +46,7 @@ public final class HiveTestSimulator {
             }
             */
 
-            TableDataBuilder tableDataBuilder = new TableDataBuilder(tableName, fm, rowNumber);
+            TableDataBuilder tableDataBuilder = new TableDataBuilder(env, tableName, fm, rowNumber);
             tableDataBuilder.outputDataFile();
 
             tableDataBuilder.loadLocalData();

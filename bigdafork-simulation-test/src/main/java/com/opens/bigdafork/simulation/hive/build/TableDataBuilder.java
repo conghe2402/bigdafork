@@ -2,6 +2,7 @@ package com.opens.bigdafork.simulation.hive.build;
 
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ public class TableDataBuilder {
     private static final String DATE = "20200101";
 
 
-    private double START_ID = 580000000000000000d;
+    private double startId = 580000000000000000d;
 
     private String fileDir = "";
     private String tableName = null;
@@ -32,10 +33,12 @@ public class TableDataBuilder {
     private int rolNumber = 0;
     private String datFileName = "";
     private Random rm = new Random();
+    private Configuration env;
 
-    public TableDataBuilder(String tableName,
+    public TableDataBuilder(Configuration env, String tableName,
                             Map<String, HiveManageUtils.HiveField> fieldsMap,
                             int rowNumber) {
+        this.env = env;
         this.tableName = tableName;
         this.fieldsMap = fieldsMap;
         this.datFileName = String.format("%s%s.bd", tableName);
@@ -56,7 +59,7 @@ public class TableDataBuilder {
 
             while (i < rolNumber) {
                 MappedByteBuffer mbuf = fc.map(FileChannel.MapMode.READ_WRITE, offset, len);
-                for(int j = 0; j < 1000; j++,i++) {
+                for(int j = 0; j < 1000; j++, i++) {
                     line = genLine();
                     bs = line.getBytes();
                     mbuf.put(bs);
@@ -77,11 +80,12 @@ public class TableDataBuilder {
         String loadSql = String.format("load data local inpath '%s' overwrite into table %s",
                 this.datFileName, this.tableName);
         LOGGER.info(loadSql);
-        try (Connection connection = HiveOpUtils.getConnection()) {
+        try (Connection connection = HiveOpUtils.getConnection(this.env)) {
             HiveOpUtils.execDDL(connection, loadSql);
             LOGGER.info(String.format("done with loading local data %s into hive table %s",
                     datFileName, tableName));
-        } catch (SQLException e) {
+        } catch (SQLException | IllegalAccessException
+                | InstantiationException | ClassNotFoundException e) {
             LOGGER.error(e.getMessage());
             e.printStackTrace();
         }
@@ -100,7 +104,7 @@ public class TableDataBuilder {
         for (Map.Entry<String, HiveManageUtils.HiveField> fieldEntry : fieldsMap.entrySet()) {
             HiveManageUtils.HiveField field = fieldEntry.getValue();
             if (field.isMK()){
-                String id = String.valueOf(START_ID);
+                String id = String.valueOf(startId);
                 id = id.substring(0, id.indexOf('.'));
                 line.append(id).append(SEP);
             } else if (field.isPartition()) {
@@ -108,7 +112,7 @@ public class TableDataBuilder {
             } else {
                 line.append(rm.nextInt(100) + 1).append(SEP);
             }
-            START_ID += 1;
+            startId += 1;
         }
         if (line.charAt(line.length() - 1) == SEP) {
             line.deleteCharAt(line.length() - 1);
