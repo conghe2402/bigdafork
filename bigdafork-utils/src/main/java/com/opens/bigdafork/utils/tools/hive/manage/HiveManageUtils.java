@@ -4,6 +4,7 @@ import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
 import com.opens.bigdafork.utils.common.exceptions.LoadConfigException;
 import com.opens.bigdafork.utils.common.util.DefaultConnect4Ready;
 import com.opens.bigdafork.utils.tools.AbstractManageUtils;
+import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
 import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -54,7 +55,7 @@ public class HiveManageUtils extends AbstractManageUtils {
             ResultSetMetaData rsmd = rs.getMetaData();
             //LOGGER.debug(rsmd.getColumnCount() + ""); //result is 3;
             int i = 0;
-            String kName = "";
+            String kName;
             while (rs.next()) {
                 kName = rs.getString(1);
                 if (checkKeyNameIsInvalid(kName)) {
@@ -91,6 +92,22 @@ public class HiveManageUtils extends AbstractManageUtils {
         return fieldsMap;
     }
 
+    /**
+     * To get hive connection url.
+     * @return
+     */
+    public String getHiveConnUrl() {
+        if (StringUtils.isBlank(connUrl)) {
+            this.connUrl = this.getConfiguration().get(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY);
+        }
+        return connUrl;
+    }
+
+    @Override
+    public Configuration getEnvConfiguration() {
+        return new Configuration(this.getConfiguration());
+    }
+
     @Override
     protected void initialize() {
         this.setConfiguration(new Configuration());
@@ -103,33 +120,13 @@ public class HiveManageUtils extends AbstractManageUtils {
         if(StringUtils.isBlank(url)) {
             throw new LoadConfigException("can not get hive url!");
         }
-
-        Connection connection = null;
-        try {
-            Class.forName("org.apache.hive.jdbc.HiveDriver").newInstance();
-            connection = DriverManager.getConnection(url, "", "");
-        } catch (InstantiationException | IllegalAccessException
-                    | ClassNotFoundException | SQLException e) {
-            LOGGER.error("when get a connection, throws an exception : " + e.getMessage());
-            throw (e);
-        }
-        return connection;
-    }
-
-    /**
-     * To get hive connection url.
-     * @return
-     */
-    public String getHiveConnUrl() {
-        if (StringUtils.isBlank(connUrl)) {
-            this.connUrl = this.getConfiguration().get(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY);
-        }
-        return connUrl;
+        return HiveOpUtils.getConnectionSafeMode(url);
     }
 
     private boolean checkKeyNameIsInvalid(String kName) {
         return StringUtils.isBlank(kName) || kName.startsWith(COL_KEY);
     }
+
     /**
      * Hive field definition.
      */

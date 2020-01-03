@@ -44,6 +44,7 @@ public class HadoopLoginDo extends BasicObservable implements IDo<Configuration,
 
     @Override
     public Configuration iDo(Configuration entries) {
+        entries.setBoolean(BigdataUtilsGlobalConstants.SAFE_MODE, true);
         try {
             //jaas
             setJaasConf();

@@ -23,7 +23,7 @@ public final class BigdataUtilsGlobalConstants {
     /**
      * To connect to a cluster in safe mode if it is set to value "true".
      */
-    public static final String SAFE_MODE = "safe.mode";
+    public static final String SAFE_MODE = "bigdafork.safe.mode";
     public static final String
             ZOOKEEPER_SERVER_PRINCIPAL = "zookeeper.server.principal";
 

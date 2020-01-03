@@ -152,6 +152,7 @@ public class HBaseManagerUtils extends AbstractManageUtils {
      * To get a copy of env configuration object.
      * @return
      */
+    @Override
     public Configuration getEnvConfiguration() {
         return HBaseConfiguration.create(this.getConfiguration());
     }

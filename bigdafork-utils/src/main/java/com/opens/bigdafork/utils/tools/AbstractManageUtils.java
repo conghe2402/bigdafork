@@ -28,6 +28,8 @@ public abstract class AbstractManageUtils {
         initialize();
     }
 
+    public abstract Configuration getEnvConfiguration();
+
     protected abstract void initialize();
 
 }
