@@ -20,7 +20,7 @@ public final class HiveOpUtils {
 
     public static Connection getConnection(Configuration env) throws InstantiationException,
             IllegalAccessException, ClassNotFoundException, SQLException {
-        if (env.getBoolean(BigdataUtilsGlobalConstants.SAFE_MODE,false)) {
+        if (env.getBoolean(BigdataUtilsGlobalConstants.SAFE_MODE, false)) {
             //safe mode
             return getConnectionSafeMode(env.get(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY));
         } else {
