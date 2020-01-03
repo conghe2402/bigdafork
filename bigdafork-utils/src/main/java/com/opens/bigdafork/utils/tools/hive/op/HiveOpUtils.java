@@ -37,6 +37,7 @@ public final class HiveOpUtils {
             IllegalAccessException, ClassNotFoundException, SQLException {
         Connection connection;
         try {
+            LOGGER.debug("conn url : " + url);
             Class.forName("org.apache.hive.jdbc.HiveDriver").newInstance();
             connection = DriverManager.getConnection(url, "", "");
         } catch (InstantiationException | IllegalAccessException
