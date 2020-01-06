@@ -11,6 +11,7 @@
         <module>bigdafork-parent</module>
         <module>bigdafork-utils</module>
         <module>bigdafork-simulation-test</module>
+        <module>bigdafork-common</module>
     </modules>
 
     <packaging>pom</packaging>
