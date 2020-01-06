@@ -5,10 +5,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 /**
  * Hive op utils.
@@ -53,7 +50,7 @@ public final class HiveOpUtils {
     }
 
     /**
-     * To exec dll statement.
+     * To exec dll statement with connection obj.
      * @param connection
      * @param ddl
      */
@@ -61,6 +58,31 @@ public final class HiveOpUtils {
         try (PreparedStatement statement = connection.prepareStatement(ddl)) {
             statement.execute();
         }
+    }
+
+    public static void execDDL(Configuration env, String sql) {
+        LOGGER.debug(sql);
+        try (Connection connection = getConnection(env)) {
+            HiveOpUtils.execDDL(connection, sql);
+        } catch (SQLException | IllegalAccessException
+                | InstantiationException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static ResultSet execQuery(Connection connection, String ddl) throws SQLException {
+        Statement stmt = connection.createStatement();
+        return stmt.executeQuery(ddl);
+    }
+
+    /**
+     * drop a hive table.
+     */
+    public static void dropTable(Connection connection, String tableName) throws SQLException {
+        String sql = String.format("drop table if exists %s", tableName);
+        LOGGER.debug(sql);
+        HiveOpUtils.execDDL(connection, sql);
     }
 
     public static void closeConnection(Connection connection) {

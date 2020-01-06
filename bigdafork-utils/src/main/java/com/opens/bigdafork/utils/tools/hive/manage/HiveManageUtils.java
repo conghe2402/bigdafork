@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -45,14 +45,14 @@ public class HiveManageUtils extends AbstractManageUtils {
      */
     public Map<String, HiveField> getHiveFieldsOfHiveTable(String hiveTableName) {
         LOGGER.debug("getHiveFieldsOfHiveTable...");
-        Map<String, HiveField> fieldsMap = new HashMap<>();
+        Map<String, HiveField> fieldsMap = new LinkedHashMap<>();
 
         try (Connection conn = this.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(String.format("describe %s", hiveTableName))) {
 
             //all of rsmd getXXX methods are invalid except getColumnCount.
-            ResultSetMetaData rsmd = rs.getMetaData();
+            //ResultSetMetaData rsmd = rs.getMetaData();
             //LOGGER.debug(rsmd.getColumnCount() + ""); //result is 3;
             int i = 0;
             String kName;
