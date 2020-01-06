@@ -1,5 +1,6 @@
 package com.opens.bigdafork.simulation.hive;
 
+import com.opens.bigdafork.simulation.common.Constants;
 import com.opens.bigdafork.simulation.hive.build.Initializer;
 import com.opens.bigdafork.simulation.hive.build.TableDataBuilder;
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
@@ -52,21 +53,30 @@ public final class HiveTestSimulator {
         }
 
         for (Iterator<String> it = tableSet.iterator(); it.hasNext();) {
-            String tableName = it.next();
-            LOGGER.info("begin to simulate " + tableName);
-            Map<String, HiveManageUtils.HiveField> fm = hiveManageUtils.getHiveFieldsOfHiveTable(tableName);
+            String mTableName = String.format("%s%s", Constants.SIMULATE_PREFIX, it.next());
+            LOGGER.info("begin to simulate " + mTableName);
+
+            Map<String, HiveManageUtils.HiveField> fm = hiveManageUtils.getHiveFieldsOfHiveTable(mTableName);
 
             /*
             for (Map.Entry<String, HiveManageUtils.HiveField> e : fm.entrySet()) {
-                LOGGER.info(e.getKey() + " : " + e.getValue().getFieldType());
+                LOGGER.info(e.getKey() + " : " + e.getValue().getFieldType() + " : " + e.getValue().isMK());
             }
             */
 
-            TableDataBuilder tableDataBuilder = new TableDataBuilder(env, tableName, fm, rowNumber);
+            TableDataBuilder tableDataBuilder = new TableDataBuilder(env, mTableName, fm, rowNumber);
             tableDataBuilder.outputDataFile();
 
-            tableDataBuilder.loadLocalData();
-            LOGGER.info("done with simulating " + tableName);
+            if (!tableDataBuilder.putIntoHDFS()) {
+                LOGGER.info("put file into hfds fail");
+                return;
+            }
+
+            tableDataBuilder.loadHDFSData2TmpTable();
+
+            tableDataBuilder.insert2MTable();
+
+            LOGGER.info("done with simulating " + mTableName);
         }
 
         LOGGER.info("complete......");

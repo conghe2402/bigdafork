@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
@@ -65,24 +66,60 @@ public class Initializer {
         String[] cmds = tableCmd.split(",");
         String tableName = cmds[0];
         if (!isNeedInitial(tableName)) {
-            LOGGER.debug("ignore table : " + tableName);
+            LOGGER.info("ignore table : " + tableName);
             return;
         }
         tables.add(tableName);
 
         String mkColName = cmds[1];
         String mkComments = cmds[2];
-        String parColName = cmds[3];
-        String partComment = cmds[4];
+        //String parColName = cmds[3];
+        //String partComment = cmds[4];
         try (Connection connection = HiveOpUtils.getConnection(this.env)) {
-            HiveOpUtils.execDDL(connection, getDropTableSQL(tableName));
+            HiveOpUtils.dropTable(connection, String.format("%s%s",
+                    Constants.SIMULATE_PREFIX, tableName));
             HiveOpUtils.execDDL(connection, getCreateTableSQL(tableName));
             HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
                     mkColName, mkComments));
+            //create txt temp table
+            HiveOpUtils.dropTable(connection, String.format("%s%s%s",
+                    Constants.SIMULATE_PREFIX, tableName, Constants.TEMP_TABLE_SUFFIX));
+            HiveOpUtils.execDDL(connection, getTxtTableCreateSQL(connection, tableName));
             // partition field can not be add comments in this way except through meta database
             //HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
             //        parColName, partComment));
         }
+    }
+
+    /**
+     * generate Txt table sql.
+     * @param connection
+     * @param tableName
+     * @return
+     * @throws SQLException
+     */
+    private String getTxtTableCreateSQL(Connection connection, String tableName) throws SQLException {
+        String cmd = String.format("show create table %s%s",
+                Constants.SIMULATE_PREFIX, tableName);
+        LOGGER.debug(cmd);
+        ResultSet rs = HiveOpUtils.execQuery(connection, cmd);
+
+        StringBuilder createSQL = new StringBuilder();
+        while (rs.next()) {
+            String parts = rs.getString(1);
+            LOGGER.info(parts);
+            if (parts.trim().startsWith("CREATE TABLE `")) {
+                parts = String.format("CREATE TABLE `%s%s%s` (",
+                        Constants.SIMULATE_PREFIX, tableName, Constants.TEMP_TABLE_SUFFIX);
+            }
+            if (parts.trim().startsWith("ROW FORMAT ")) {
+                break;
+            }
+            createSQL.append(parts);
+        }
+        createSQL.append(" row format delimited fields terminated by ',' lines terminated by '\\n' stored as textfile");
+        LOGGER.debug(createSQL.toString());
+        return createSQL.toString();
     }
 
     private String getDropTableSQL(String tableName) {

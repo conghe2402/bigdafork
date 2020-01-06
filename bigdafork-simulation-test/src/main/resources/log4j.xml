@@ -20,10 +20,27 @@
             <param name="LevelMax" value="ERROR"/>
         </filter>
     </appender>
+    <appender name="apacheFileLog"  class="org.apache.log4j.rolling.RollingFileAppender">
+        <param name="Append" value="true"/>
+        <rollingPolicy  class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+            <param name="FileNamePattern" value="./log/apache_log_%d{yyyy-MM-dd}.log" />
+        </rollingPolicy>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss a} [%p] [%t][%c{1} %L]:%m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="ERROR"/>
+        </filter>
+    </appender>
 
+    <logger name="org.apache" additivity="false" >
+        <level value="DEBUG" />
+        <appender-ref ref="apacheFileLog" />
+    </logger>
 
     <root>
-        <priority value="debug"/>
+        <priority value="INFO"/>
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </root>
