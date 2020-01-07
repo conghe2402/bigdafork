@@ -3,6 +3,7 @@ package com.opens.bigdafork.simulation.hive.build;
 import com.google.common.collect.Lists;
 import com.opens.bigdafork.simulation.common.Constants;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
+import jodd.util.StringUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +74,10 @@ public class Initializer {
 
         String mkColName = cmds[1];
         String mkComments = cmds[2];
-        //String parColName = cmds[3];
+        String specialColName1 = "";
+        if (cmds.length > 3) {
+            specialColName1 = cmds[3];
+        }
         //String partComment = cmds[4];
         try (Connection connection = HiveOpUtils.getConnection(this.env)) {
             HiveOpUtils.dropTable(connection, String.format("%s%s",
@@ -88,6 +92,11 @@ public class Initializer {
             // partition field can not be add comments in this way except through meta database
             //HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
             //        parColName, partComment));
+
+            if (StringUtil.isNotBlank(specialColName1)) {
+                HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
+                        specialColName1, Constants.FIELD_VALUE_GEN));
+            }
         }
     }
 

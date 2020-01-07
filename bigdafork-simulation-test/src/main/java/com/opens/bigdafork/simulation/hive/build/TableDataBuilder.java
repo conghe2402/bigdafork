@@ -1,9 +1,11 @@
 package com.opens.bigdafork.simulation.hive.build;
 
 import com.opens.bigdafork.simulation.common.Constants;
+import com.opens.bigdafork.simulation.hive.build.fieldValue.FieldValueGen;
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
 import com.opens.bigdafork.utils.tools.shell.ShellUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import java.math.BigDecimal;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -43,6 +46,8 @@ public class TableDataBuilder {
     private String destFilePath = "";
     private String tmpMTableName = "";
     private NumberFormat numberFormat;
+    //special field value generator.
+    private Map<String,FieldValueGen> fvgMap = new HashMap<>();
 
     public TableDataBuilder(Configuration env, String mTableName,
                             Map<String, HiveManageUtils.HiveField> fieldsMap,
@@ -58,6 +63,7 @@ public class TableDataBuilder {
         numberFormat = NumberFormat.getInstance();
         numberFormat.setMaximumFractionDigits(0);
         numberFormat.setGroupingUsed(false);
+
     }
 
     public void outputDataFile() {
@@ -169,7 +175,14 @@ public class TableDataBuilder {
             } else if (field.isPartition()) {
                 line.append(DATE);
             } else {
-                int randNum = rm.nextInt(100) + 1;
+                int randNum;
+                FieldValueGen fvg = fvgMap.get(field.getFieldName());
+                if (fvg != null && fvg.getTableName().equals(this.mTableName)
+                        && fvg.getFieldName().equals(field.getFieldName())) {
+                    randNum = Integer.parseInt(fvg.getValue());
+                } else {
+                    randNum = rm.nextInt(100) + 1;
+                }
                 line.append(String.format("%03d", randNum)).append(SEP);
             }
         }
@@ -195,6 +208,18 @@ public class TableDataBuilder {
         }
 
         return fields.toString();
+    }
+
+    private void setFieldValueGen() {
+        for (Map.Entry<String, HiveManageUtils.HiveField> fieldEntry : fieldsMap.entrySet()) {
+            String comment = fieldEntry.getValue().getComment();
+            if (StringUtils.isNotBlank(comment)) {
+                if (comment.startsWith(Constants.FIELD_VALUE_GEN)){
+                    String fn = fieldEntry.getValue().getFieldName();
+                    this.fvgMap.put(fn, new FieldValueGen(this.mTableName, fn));
+                }
+            }
+        }
     }
 
     private boolean checkIsPartitionTable() {
