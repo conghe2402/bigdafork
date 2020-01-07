@@ -68,6 +68,7 @@ public class HiveManageUtils extends AbstractManageUtils {
                 field.setFieldName(kName);
                 field.setFieldType(rs.getString(2));
                 field.setIndex(i++);
+                field.setComment(rs.getString(3));
                 if (MK_FLAG.equals(rs.getString(3))) {
                     field.setMK(true);
                 }
@@ -137,5 +138,6 @@ public class HiveManageUtils extends AbstractManageUtils {
         private boolean isMK;
         private int index;
         private boolean isPartition;
+        private String comment;
     }
 }
