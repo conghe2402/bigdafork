@@ -1,0 +1,23 @@
+#!/bin/sh
+source ../bigdata_env
+kinit -kt ../../user.keytab ebda
+
+homePath=
+logConfPath=${homePath}/log4j.xml
+libPath=${homePath}/lib
+mainClass="com.opens.bigdafork.simulation.hive.HiveTestSimulator"
+tables="all"
+rowNumber=""
+
+dependPath=${libPath}
+
+candidateJars=`ls ${dependPath}`
+candidateJars=${candidateJars// / }
+candidateJarsArr=(${candidateJars})
+
+externalLib=""
+for needJar in ${candidateJarsArr[*]}; do
+    externalLib="${externalLib}:${dependPath}/${needJar}"
+done
+
+java -Dlog4j.configuration=file:${logConfPath} -Dproperties.path=${homePath}/env.properties -classpath ${externalLib} ${mainClass} ${tables} ${rowNumber}
