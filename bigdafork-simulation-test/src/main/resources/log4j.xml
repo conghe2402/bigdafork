@@ -26,7 +26,7 @@
             <param name="FileNamePattern" value="./log/apache_log_%d{yyyy-MM-dd}.log" />
         </rollingPolicy>
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss a} [%p] [%t][%c{1} %L]:%m%n"/>
+            <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss a} [%p] [%t][%c{4} %L]:%m%n"/>
         </layout>
         <filter class="org.apache.log4j.varia.LevelRangeFilter">
             <param name="LevelMin" value="DEBUG"/>

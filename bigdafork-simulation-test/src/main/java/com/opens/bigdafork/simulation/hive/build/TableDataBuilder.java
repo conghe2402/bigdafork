@@ -1,6 +1,7 @@
 package com.opens.bigdafork.simulation.hive.build;
 
 import com.opens.bigdafork.simulation.common.Constants;
+import com.opens.bigdafork.simulation.hive.ConfigParser;
 import com.opens.bigdafork.simulation.hive.build.fieldValue.FieldValueGen;
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
@@ -35,7 +36,7 @@ public class TableDataBuilder {
     private String fileDir = "/root/workspace/bds/";
     private String mTableName = null;
     private Map<String, HiveManageUtils.HiveField> fieldsMap = null;
-    private int rolNumber = 0;
+    private long rolNumber = 0;
     private String datFileName = "";
     private Random rm = new Random();
     private Configuration env;
@@ -47,11 +48,11 @@ public class TableDataBuilder {
     private String tmpMTableName = "";
     private NumberFormat numberFormat;
     //special field value generator.
-    private Map<String,FieldValueGen> fvgMap = new HashMap<>();
+    private Map<String, FieldValueGen> fvgMap = new HashMap<>();
 
     public TableDataBuilder(Configuration env, String mTableName,
                             Map<String, HiveManageUtils.HiveField> fieldsMap,
-                            int rowNumber) {
+                            long rowNumber) {
         this.env = env;
         this.mTableName = mTableName;
         this.tmpMTableName = mTableName + Constants.TEMP_TABLE_SUFFIX;
@@ -63,7 +64,7 @@ public class TableDataBuilder {
         numberFormat = NumberFormat.getInstance();
         numberFormat.setMaximumFractionDigits(0);
         numberFormat.setGroupingUsed(false);
-
+        setFieldValueGen();
     }
 
     public void outputDataFile() {
@@ -82,21 +83,28 @@ public class TableDataBuilder {
         try (RandomAccessFile acf = new RandomAccessFile(bdf, "rw");
             FileChannel fc = acf.getChannel()) {
             int i = 0;
-            String line = genLine();
-            byte[] bs = line.getBytes();
-            int batch = Math.min(rolNumber, 1000);
-
-            int len = bs.length * batch;
+            int lineMaxLength = getLineMaxLength();
+            LOGGER.info("lineMaxLength ： " + lineMaxLength);
+            int batchMaxNum = rolNumber > 10000 ? 10000: (int)rolNumber;
+            final int batchMaxLen = lineMaxLength * batchMaxNum;
+            LOGGER.info("batchMaxLen ： " + batchMaxLen);
             long offset = 0;
+            String line;
+            byte[] bs;
             while (i < rolNumber) {
-                MappedByteBuffer mbuf = fc.map(FileChannel.MapMode.READ_WRITE, offset, len);
-                for(int j = 0; j < batch; j++, i++) {
+                MappedByteBuffer mbuf = fc.map(FileChannel.MapMode.READ_WRITE, offset, batchMaxLen);
+                int batchLen = 0;
+                for(int j = 0; j < batchMaxNum; j++, i++) {
                     line = genLine();
-                    LOGGER.info(line);
                     bs = line.getBytes();
+                    if (batchLen + bs.length > batchMaxLen) {
+                        break;
+                    }
+                    batchLen += bs.length;
+                    //LOGGER.info(""+i + " - " + line);
                     mbuf.put(bs);
                 }
-                offset = offset + len;
+                offset += batchLen;
             }
 
             LOGGER.info(String.format("done with generating data file %s for %s",
@@ -117,9 +125,9 @@ public class TableDataBuilder {
                     mTableName, partitionFieldName, DATE, fields, tmpMTableName);
         } else {
             insertSQL = String.format("insert overwrite table %s select * from %s",
-                    mTableName, partitionFieldName, DATE, tmpMTableName);
+                    mTableName, tmpMTableName);
         }
-
+        LOGGER.info(insertSQL);
         HiveOpUtils.execDDL(this.env, insertSQL);
         LOGGER.info(String.format("done with inserting %s into hive table %s",
                 datFileName, mTableName));
@@ -158,7 +166,6 @@ public class TableDataBuilder {
             e.printStackTrace();
             return false;
         }
-
     }
 
     /**
@@ -175,15 +182,15 @@ public class TableDataBuilder {
             } else if (field.isPartition()) {
                 line.append(DATE);
             } else {
-                int randNum;
+                String value;
                 FieldValueGen fvg = fvgMap.get(field.getFieldName());
                 if (fvg != null && fvg.getTableName().equals(this.mTableName)
                         && fvg.getFieldName().equals(field.getFieldName())) {
-                    randNum = Integer.parseInt(fvg.getValue());
+                    value = fvg.getValue();
                 } else {
-                    randNum = rm.nextInt(100) + 1;
+                    value = String.format("%03d", (rm.nextInt(100) + 1));
                 }
-                line.append(String.format("%03d", randNum)).append(SEP);
+                line.append(value).append(SEP);
             }
         }
         if (line.length() > 0 && line.charAt(line.length() - 1) == SEP) {
@@ -192,6 +199,30 @@ public class TableDataBuilder {
         line.append(NEW_LINE_FLAG);
         startId = startId.add(new BigDecimal(1));
         return line.toString();
+    }
+
+    private int getLineMaxLength() {
+        int length = 0;
+        for (Map.Entry<String, HiveManageUtils.HiveField> fieldEntry : fieldsMap.entrySet()) {
+            HiveManageUtils.HiveField field = fieldEntry.getValue();
+
+            if (field.isMK()){
+                length += startId.toString().length();
+            } else if (field.isPartition()) {
+                length += DATE.length();
+            } else {
+                FieldValueGen fvg = fvgMap.get(field.getFieldName());
+                if (fvg != null && fvg.getTableName().equals(this.mTableName)
+                        && fvg.getFieldName().equals(field.getFieldName())) {
+                    length += fvg.getMaxValueLength();
+                } else {
+                    length += 3;
+                }
+            }
+            length++;
+        }
+
+        return length;
     }
 
     private String getFieldsString() {
@@ -213,11 +244,13 @@ public class TableDataBuilder {
     private void setFieldValueGen() {
         for (Map.Entry<String, HiveManageUtils.HiveField> fieldEntry : fieldsMap.entrySet()) {
             String comment = fieldEntry.getValue().getComment();
-            if (StringUtils.isNotBlank(comment)) {
-                if (comment.startsWith(Constants.FIELD_VALUE_GEN)){
-                    String fn = fieldEntry.getValue().getFieldName();
-                    this.fvgMap.put(fn, new FieldValueGen(this.mTableName, fn));
-                }
+            if (StringUtils.isBlank(comment)) {
+                continue;
+            }
+            String fn = fieldEntry.getValue().getFieldName();
+            FieldValueGen fvg = (FieldValueGen)ConfigParser.parseItem(this.mTableName, fn, comment);
+            if (fvg != null) {
+                this.fvgMap.put(fn, fvg);
             }
         }
     }

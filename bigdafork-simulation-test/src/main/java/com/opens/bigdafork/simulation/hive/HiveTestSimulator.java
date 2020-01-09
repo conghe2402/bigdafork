@@ -21,13 +21,13 @@ public final class HiveTestSimulator {
 
     public static void main(String[] args) {
         LOGGER.info("start......");
-        int rowNumber = 10;
-        String[] tableNames = {"TBL_CUST_STAT_WEEK", ""};
+        long rowNumber = 0;
+        String[] tableNames = {"TBL_LOANTRANLOGINFO_TMP1", ""};
 
         int i = 0;
         LOGGER.info("params : ");
         if (args != null && args.length > i) {
-            tableNames = args[i++].split(",");
+            tableNames = args[i++].toUpperCase().split(",");
         }
         for (String table : tableNames) {
             LOGGER.info(table);
@@ -45,17 +45,20 @@ public final class HiveTestSimulator {
         Configuration env = hiveManageUtils.getEnvConfiguration();
 
         Initializer initializer = new Initializer(env, tableSet);
-        tableSet = initializer.doInitial();
+        Set<Initializer.TableConf> tableConfSet = initializer.doInitial();
 
-        if (tableSet == null || tableSet.size() == 0) {
+        if (tableConfSet == null || tableConfSet.size() == 0) {
             LOGGER.info("no table need initialize...");
             return;
         }
 
-        for (Iterator<String> it = tableSet.iterator(); it.hasNext();) {
-            String mTableName = String.format("%s%s", Constants.SIMULATE_PREFIX, it.next());
+        for (Iterator<Initializer.TableConf> it = tableConfSet.iterator(); it.hasNext();) {
+            Initializer.TableConf tableConf = it.next();
+            String mTableName = String.format("%s%s", Constants.SIMULATE_PREFIX, tableConf.getTableName());
             LOGGER.info("begin to simulate " + mTableName);
-
+            if (rowNumber <= 0) {
+                rowNumber = tableConf.getRowNumber();
+            }
             Map<String, HiveManageUtils.HiveField> fm = hiveManageUtils.getHiveFieldsOfHiveTable(mTableName);
 
             /*
