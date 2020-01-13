@@ -17,12 +17,10 @@ import java.util.*;
 public final class HiveTestSimulator {
     private static final Logger LOGGER = LoggerFactory.getLogger(HiveTestSimulator.class);
 
-    private HiveTestSimulator() {}
-
     public static void main(String[] args) {
         LOGGER.info("start......");
         long rowNumber = 0;
-        String[] tableNames = {"TBL_LOANTRANLOGINFO_TMP1", ""};
+        String[] tableNames = {""};
 
         int i = 0;
         LOGGER.info("params : ");
@@ -84,4 +82,6 @@ public final class HiveTestSimulator {
 
         LOGGER.info("complete......");
     }
+
+    private HiveTestSimulator() {}
 }

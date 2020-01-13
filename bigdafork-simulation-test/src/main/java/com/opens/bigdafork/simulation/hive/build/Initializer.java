@@ -39,7 +39,7 @@ public class Initializer {
      */
     public Set<TableConf> doInitial() {
         LOGGER.info("initializing...");
-        LOGGER.info("try to load : " + CONF_FILE);
+        LOGGER.debug("try to load : " + CONF_FILE);
         File confFile = new File(CONF_FILE);
         if (!confFile.exists()) {
             LOGGER.warn("no conf file");
@@ -130,9 +130,7 @@ public class Initializer {
                 HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
                         item.getKey(), item.getValue()));
             }
-
         }
-
         LOGGER.info("done with initial : " + tableName);
     }
 

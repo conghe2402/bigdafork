@@ -28,7 +28,6 @@ public final class ConfigParser {
                         Integer.parseInt(arr[2]),
                         Integer.parseInt(constArr[0]), Integer.parseInt(constArr[1]));
             } else if (arr[1].equals("2")) {
-
                 return new ConstFieldValueGen(mTableName, fieldName,
                         Integer.parseInt(arr[2]), constArr);
             }
@@ -36,7 +35,6 @@ public final class ConfigParser {
 
         return null;
     }
-
 
     private ConfigParser() {}
 
