@@ -47,6 +47,7 @@
         <fastjson.version>1.2.32</fastjson.version>
         <checkstype.version>7.7.1</checkstype.version>
         <google-collection.version>1.0</google-collection.version>
+        <commons-io.version>2.4</commons-io.version>
     </properties>
 
     <dependencyManagement>
@@ -166,6 +167,18 @@
                 <version>${hive.jdbc.version}</version>
             </dependency>
             -->
+            <dependency>
+                <groupId>org.spark-project.hive</groupId>
+                <artifactId>hive-jdbc</artifactId>
+                <version>1.2.1.spark</version>
+                <scope>compile</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
