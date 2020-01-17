@@ -1,4 +1,4 @@
-package com.opens.bigdafork.utils.common.basic;
+package com.opens.bigdafork.common.base;
 
 /**
  * abstract the action of doing anything.

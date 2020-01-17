@@ -1,4 +1,4 @@
-package com.opens.bigdafork.utils.common.exceptions;
+package com.opens.bigdafork.common.base.exception;
 
 import java.io.Serializable;
 

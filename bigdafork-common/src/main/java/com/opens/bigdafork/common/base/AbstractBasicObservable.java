@@ -1,4 +1,4 @@
-package com.opens.bigdafork.utils.common.basic;
+package com.opens.bigdafork.common.base;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,15 +9,15 @@ import java.util.Observer;
 /**
  * add notification functionality via observable pattern.
  */
-public abstract class BasicObservable extends Observable {
+public abstract class AbstractBasicObservable extends Observable {
 
     private Observer observer;
 
-    public BasicObservable() {
+    public AbstractBasicObservable() {
         this(null);
     }
 
-    public BasicObservable(Observer observer) {
+    public AbstractBasicObservable(Observer observer) {
         this.observer = observer;
         if (this.observer == null) {
             this.setDefaultOb();
