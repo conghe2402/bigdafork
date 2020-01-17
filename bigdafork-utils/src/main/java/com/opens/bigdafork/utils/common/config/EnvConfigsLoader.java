@@ -1,8 +1,8 @@
 package com.opens.bigdafork.utils.common.config;
 
-import com.opens.bigdafork.utils.common.basic.BasicObservable;
+import com.opens.bigdafork.common.base.AbstractBasicObservable;
+import com.opens.bigdafork.common.base.exception.LoadConfigException;
 import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
-import com.opens.bigdafork.utils.common.exceptions.LoadConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +11,7 @@ import java.util.Observer;
 /**
  * This is a config load utility.
  */
-public final class EnvConfigsLoader extends BasicObservable {
+public final class EnvConfigsLoader extends AbstractBasicObservable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EnvConfigsLoader.class);
     private static final Object LOCK = new Object();
 

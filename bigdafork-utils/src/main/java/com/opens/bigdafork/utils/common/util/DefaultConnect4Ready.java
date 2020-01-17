@@ -1,6 +1,6 @@
 package com.opens.bigdafork.utils.common.util;
 
-import com.opens.bigdafork.utils.common.basic.IDo;
+import com.opens.bigdafork.common.base.IDo;
 import com.opens.bigdafork.utils.common.util.connect.ConnectMaster;
 
 import java.util.List;

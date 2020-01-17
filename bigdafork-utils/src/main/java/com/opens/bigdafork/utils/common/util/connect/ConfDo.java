@@ -1,6 +1,6 @@
 package com.opens.bigdafork.utils.common.util.connect;
 
-import com.opens.bigdafork.utils.common.basic.IDo;
+import com.opens.bigdafork.common.base.IDo;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

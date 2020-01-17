@@ -1,7 +1,7 @@
 package com.opens.bigdafork.utils.common.util.connect;
 
-import com.opens.bigdafork.utils.common.basic.BasicObservable;
-import com.opens.bigdafork.utils.common.basic.IDo;
+import com.opens.bigdafork.common.base.AbstractBasicObservable;
+import com.opens.bigdafork.common.base.IDo;
 import com.opens.bigdafork.utils.common.config.EnvConfigsLoader;
 import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
 import com.opens.bigdafork.utils.common.exceptions.InvalidLoginInfoException;
@@ -29,7 +29,7 @@ import java.util.Observer;
  * should notify immediately to this observer to handle some relevant event,
  * such as shutdown the application right now.
  */
-public class HadoopLoginDo extends BasicObservable implements IDo<Configuration, Configuration> {
+public class HadoopLoginDo extends AbstractBasicObservable implements IDo<Configuration, Configuration> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HadoopLoginDo.class);
 
     private static final boolean IS_IBM_JDK = System.getProperty("java.vendor").contains("IBM");

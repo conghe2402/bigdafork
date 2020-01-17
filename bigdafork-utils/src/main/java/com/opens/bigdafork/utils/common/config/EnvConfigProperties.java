@@ -1,11 +1,10 @@
 package com.opens.bigdafork.utils.common.config;
 
-import com.opens.bigdafork.utils.common.exceptions.LoadConfigException;
+import com.opens.bigdafork.common.base.AbstractConfigProperties;
+import com.opens.bigdafork.common.base.exception.LoadConfigException;
 import com.opens.bigdafork.utils.common.util.FastjsonUtils;
-import org.apache.commons.io.Charsets;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.*;
 import java.util.Properties;
 
 import static com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants.CLASSPATH_PROPERTIES_FILE_NAME;
@@ -18,28 +17,14 @@ import org.slf4j.LoggerFactory;
 /**
  * initialize context environment of application.
  */
-public class EnvConfigProperties implements Serializable {
+public class EnvConfigProperties extends AbstractConfigProperties {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EnvConfigProperties.class);
 
     private Properties properties;
 
-    private boolean loadSuccess = false;
-
     public EnvConfigProperties() throws LoadConfigException {
         initialize();
-    }
-
-    public String getProperty(String keyName) {
-        return this.getProperty(keyName, "");
-    }
-
-    public String getProperty(String keyName, String defaultValue) {
-        return this.properties.getProperty(keyName, defaultValue);
-    }
-
-    public boolean isLoadSuccess() {
-        return this.loadSuccess;
     }
 
     /**
@@ -49,7 +34,8 @@ public class EnvConfigProperties implements Serializable {
      *
      * @throws LoadConfigException
      */
-    private void initialize() throws LoadConfigException {
+    @Override
+    public void initialize() throws LoadConfigException {
         if (this.isLoadSuccess()) {
             return;
         }
@@ -63,38 +49,21 @@ public class EnvConfigProperties implements Serializable {
             Properties propsFromJson = FastjsonUtils.convertJSONToObject(contextPropertiesJson, Properties.class);
             if (propsFromJson != null) {
                 properties.putAll(propsFromJson);
-                loadSuccess = true;
+                this.setLoadSuccess(true);
             }
         }
 
         String path = System.getProperty(JVM_PROPERTIES_PATH);
-        if (!loadSuccess && StringUtils.isNotBlank(path)) {
-            loadSuccess = loadExternalConfig(path);
+        if (!this.isLoadSuccess() && StringUtils.isNotBlank(path)) {
+            this.setLoadSuccess(loadExternalConfig(path));
+        }
+        if (!this.isLoadSuccess()) {
+            this.setLoadSuccess(loadRootClassPathConfig());
         }
 
-        if (!loadSuccess) {
-            loadSuccess = loadClassPathConfig();
-        }
-
-        if (!loadSuccess) {
+        if (!this.isLoadSuccess()) {
             throw new LoadConfigException();
         }
-    }
-
-    /**
-     * Try to load properties specified by user, return false when it fails.
-     * @param path
-     * @return
-     */
-    private boolean loadExternalConfig(String path) {
-        LOGGER.debug("try to load properties file from jvm variable");
-        boolean isSuccess = false;
-        try (InputStream inputStream = new FileInputStream(path)) {
-            isSuccess = loadConfig(inputStream);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return isSuccess;
     }
 
     /**
@@ -104,36 +73,7 @@ public class EnvConfigProperties implements Serializable {
      */
     private boolean loadRootClassPathConfig() {
         LOGGER.debug("try to load properties file in root classpath root");
-        return loadConfig(EnvConfigProperties.class
+        return loadConfigInputStream(EnvConfigProperties.class
                 .getClassLoader().getResourceAsStream(CLASSPATH_PROPERTIES_FILE_NAME));
-    }
-
-    /**
-     * try to load properties in inner classpath root,
-     * if the file does not exist in classpath root directory,
-     * this method will return false.
-     * @return
-     */
-    private boolean loadClassPathConfig() {
-        LOGGER.debug("try to load properties file in classpath root");
-        return loadConfig(EnvConfigProperties.class
-                .getClassLoader().getResourceAsStream(CLASSPATH_PROPERTIES_FILE_NAME));
-    }
-
-    /**
-     * properties loads source.
-     * @param is
-     * @return
-     */
-    private boolean loadConfig(InputStream is) {
-        boolean isSuccess = false;
-        try (InputStreamReader reader = new InputStreamReader(is,
-                Charsets.UTF_8)) {
-            properties.load(reader);
-            isSuccess = true;
-        } catch (IOException | NullPointerException e) {
-            e.printStackTrace();
-        }
-        return isSuccess;
     }
 }

@@ -1,7 +1,7 @@
 package com.opens.bigdafork.utils.common.util.connect;
 
 import com.google.common.collect.Lists;
-import com.opens.bigdafork.utils.common.basic.IDo;
+import com.opens.bigdafork.common.base.IDo;
 import com.opens.bigdafork.utils.common.config.EnvConfigsLoader;
 import org.apache.hadoop.conf.Configuration;
 

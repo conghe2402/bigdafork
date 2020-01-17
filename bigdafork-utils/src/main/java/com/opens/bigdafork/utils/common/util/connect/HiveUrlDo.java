@@ -1,6 +1,6 @@
 package com.opens.bigdafork.utils.common.util.connect;
 
-import com.opens.bigdafork.utils.common.basic.IDo;
+import com.opens.bigdafork.common.base.IDo;
 import com.opens.bigdafork.utils.common.config.EnvConfigsLoader;
 import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
 import org.apache.hadoop.conf.Configuration;
@@ -14,12 +14,12 @@ import org.slf4j.LoggerFactory;
  */
 public class HiveUrlDo implements IDo<Configuration, Configuration> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HiveUrlDo.class);
-    private static final String HIVE_JDBC_URL = "jdbc:hive2://%s/"
-            + ";serviceDiscoveryMode=zooKeeper"
-            + ";zooKeeperNamespace=hiveserver2"
-            + ";sasl.qop=auth-conf"
-            + ";auth=KERBEROS"
-            + ";principal=%s" + ";";
+    private static final String HIVE_JDBC_URL = new StringBuilder("jdbc:hive2://%s/")
+            .append(";serviceDiscoveryMode=zooKeeper")
+            .append(";zooKeeperNamespace=hiveserver2")
+            .append(";sasl.qop=auth-conf")
+            .append(";auth=KERBEROS")
+            .append(";principal=%s;").toString();
 
     @Override
     public Configuration iDo(Configuration configuration) {

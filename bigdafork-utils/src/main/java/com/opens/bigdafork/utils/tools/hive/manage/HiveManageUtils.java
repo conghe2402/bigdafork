@@ -1,7 +1,7 @@
 package com.opens.bigdafork.utils.tools.hive.manage;
 
+import com.opens.bigdafork.common.base.exception.LoadConfigException;
 import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
-import com.opens.bigdafork.utils.common.exceptions.LoadConfigException;
 import com.opens.bigdafork.utils.common.util.DefaultConnect4Ready;
 import com.opens.bigdafork.utils.tools.AbstractManageUtils;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
