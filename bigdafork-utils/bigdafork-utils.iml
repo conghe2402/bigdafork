@@ -10,6 +10,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="bigdafork-common" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" name="Maven: org.apache.hbase:hbase-server:1.0.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.hbase:hbase-protocol:1.0.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.hbase:hbase-client:1.0.2" level="project" />
@@ -29,7 +31,6 @@
     <orderEntry type="library" name="Maven: com.sun.jersey:jersey-server:1.9" level="project" />
     <orderEntry type="library" name="Maven: asm:asm:3.1" level="project" />
     <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.2" level="project" />
-    <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" name="Maven: commons-lang:commons-lang:2.6" level="project" />
     <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-math:2.2" level="project" />
@@ -55,7 +56,6 @@
     <orderEntry type="library" name="Maven: org.apache.hadoop:hadoop-yarn-common:2.5.1" level="project" />
     <orderEntry type="library" name="Maven: javax.xml.bind:jaxb-api:2.2.2" level="project" />
     <orderEntry type="library" name="Maven: javax.xml.stream:stax-api:1.0-2" level="project" />
-    <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
     <orderEntry type="library" name="Maven: com.google.inject:guice:3.0" level="project" />
     <orderEntry type="library" name="Maven: javax.inject:javax.inject:1" level="project" />
     <orderEntry type="library" name="Maven: aopalliance:aopalliance:1.0" level="project" />
@@ -85,7 +85,6 @@
     <orderEntry type="library" name="Maven: com.sun.xml.bind:jaxb-impl:2.2.3-1" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-xc:1.8.3" level="project" />
     <orderEntry type="library" name="Maven: net.java.dev.jets3t:jets3t:0.9.0" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.1.2" level="project" />
     <orderEntry type="library" name="Maven: com.jamesmurty.utils:java-xmlbuilder:0.4" level="project" />
     <orderEntry type="library" name="Maven: commons-configuration:commons-configuration:1.6" level="project" />
     <orderEntry type="library" name="Maven: commons-digester:commons-digester:1.8" level="project" />
@@ -246,5 +245,30 @@
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-log4j12:1.7.5" level="project" />
     <orderEntry type="library" name="Maven: log4j:apache-log4j-extras:1.1" level="project" />
     <orderEntry type="library" name="Maven: com.alibaba:fastjson:1.2.32" level="project" />
+    <orderEntry type="library" name="Maven: org.spark-project.hive:hive-jdbc:1.2.1.spark" level="project" />
+    <orderEntry type="library" name="Maven: org.spark-project.hive:hive-common:1.2.1.spark" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ant:ant:1.9.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ant:ant-launcher:1.9.1" level="project" />
+    <orderEntry type="library" name="Maven: org.spark-project.hive:hive-service:1.2.1.spark" level="project" />
+    <orderEntry type="library" name="Maven: net.sf.jpam:jpam:1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.jetty.aggregate:jetty-all:7.6.0.v20120127" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1" level="project" />
+    <orderEntry type="library" name="Maven: javax.mail:mail:1.4.1" level="project" />
+    <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.geronimo.specs:geronimo-jaspic_1.0_spec:1.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1" level="project" />
+    <orderEntry type="library" name="Maven: asm:asm-commons:3.1" level="project" />
+    <orderEntry type="library" name="Maven: asm:asm-tree:3.1" level="project" />
+    <orderEntry type="library" name="Maven: org.spark-project.hive:hive-serde:1.2.1.spark" level="project" />
+    <orderEntry type="library" name="Maven: org.spark-project.hive:hive-shims:1.2.1.spark" level="project" />
+    <orderEntry type="library" name="Maven: org.spark-project.hive.shims:hive-shims-common:1.2.1.spark" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.spark-project.hive.shims:hive-shims-0.20S:1.2.1.spark" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.spark-project.hive.shims:hive-shims-0.23:1.2.1.spark" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.apache.hadoop:hadoop-yarn-server-resourcemanager:2.6.0" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: com.sun.jersey:jersey-client:1.9" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.apache.hadoop:hadoop-yarn-server-applicationhistoryservice:2.6.0" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.apache.hadoop:hadoop-yarn-server-web-proxy:2.6.0" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.spark-project.hive.shims:hive-shims-scheduler:1.2.1.spark" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4" level="project" />
   </component>
 </module>
