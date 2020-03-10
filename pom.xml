@@ -12,6 +12,7 @@
         <module>bigdafork-utils</module>
         <module>bigdafork-simulation-test</module>
         <module>bigdafork-common</module>
+        <module>bigdafork-datatask</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -48,6 +49,7 @@
         <checkstype.version>7.7.1</checkstype.version>
         <google-collection.version>1.0</google-collection.version>
         <commons-io.version>2.4</commons-io.version>
+        <yaml.version>1.15</yaml.version>
     </properties>
 
     <dependencyManagement>
@@ -178,6 +180,12 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${yaml.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
