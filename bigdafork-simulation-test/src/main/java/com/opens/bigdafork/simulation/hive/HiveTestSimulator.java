@@ -32,7 +32,7 @@ public final class HiveTestSimulator {
         }
 
         if (args != null && args.length > i) {
-            rowNumber = Integer.parseInt(args[i++]);
+            rowNumber = Long.parseLong(args[i++]);
         }
         LOGGER.info("rowNumber of each table : " + rowNumber);
 
