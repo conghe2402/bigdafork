@@ -14,6 +14,7 @@ public class LoadConfigException extends RuntimeException implements Serializabl
     }
 
     public LoadConfigException(String msg) {
-        super(String.format("%s : %s", MESSAGE_HEAD, msg));
+        super((msg != null && msg.contains(MESSAGE_HEAD)) ?
+                msg : String.format("%s : %s", MESSAGE_HEAD, msg));
     }
 }

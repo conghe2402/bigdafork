@@ -1,27 +1,38 @@
-package com.opens.bigdafork.common.base;
+package com.opens.bigdafork.common.base.observe;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Observable;
-import java.util.Observer;
+
 
 /**
  * add notification functionality via observable pattern.
  */
 public abstract class AbstractBasicObservable extends Observable {
 
-    private Observer observer;
+    private AbstractBasicObserver observer;
+    private boolean stopWhenFail = false;
 
     public AbstractBasicObservable() {
-        this(null);
+        this(true, null);
     }
 
-    public AbstractBasicObservable(Observer observer) {
+    public AbstractBasicObservable(boolean stopWhenFail) {
+        this(stopWhenFail, null);
+    }
+
+    public AbstractBasicObservable(AbstractBasicObserver observer) {
+        this(true, observer);
+    }
+
+    public AbstractBasicObservable(boolean stopWhenFail, AbstractBasicObserver observer) {
+        this.stopWhenFail = stopWhenFail;
         this.observer = observer;
         if (this.observer == null) {
             this.setDefaultOb();
         }
+        this.addObserver(this.observer);
     }
 
     /**
@@ -31,28 +42,31 @@ public abstract class AbstractBasicObservable extends Observable {
      * else[false] app will shutdown immediately.
      */
     public void setDefaultOb() {
-        this.observer = new Observer() {
+        this.observer = new AbstractBasicObserver() {
             private final Logger obLogger = LoggerFactory.getLogger(this.getClass());
+
             @Override
-            public void update(Observable o, Object arg) {
-                boolean status = (boolean) arg;
-                if (!status) {
-                    obLogger.debug("operate failure , then program will shutdown");
-                    System.exit(0);
+            public void receive(NotifyEvent arg) {
+                if (!arg.isStatus()) {
+                    obLogger.warn("operate failure");
+                    if (stopWhenFail) {
+                        obLogger.warn("program will shutdown");
+                        System.exit(0);
+                    }
                 } else {
                     obLogger.debug("operate success");
                 }
             }
         };
-        this.addObserver(this.observer);
     }
 
     /**
      * Unify notify method.
      * @param notifyMsg
      */
-    protected void notify(Object notifyMsg) {
+    protected void notify(NotifyEvent notifyMsg) {
         this.setChanged();
         this.notifyObservers(notifyMsg);
     }
+
 }
