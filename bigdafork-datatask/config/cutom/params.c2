@@ -1,0 +1,14 @@
+xxxTaskName:
+    params:
+        a1: 3
+        map: 3
+    sql1:
+        engine:
+            normal: 1
+            timeout: 120
+            standby: 2
+        params:
+            mapreduec.map.memory.mb: 4096
+            mapreduce.reduce.java.opts: "+XX: DDD  –Xms40m"
+            mapreduce.reduce.java1.opts: "+XX: DDD  –Xms40m"
+
