@@ -1,43 +1,36 @@
 package com.opens.bigdafork.utils.common.config;
 
-import com.opens.bigdafork.common.base.AbstractBasicObservable;
+import com.opens.bigdafork.common.base.config.props.AbstractPropertiesConfig;
 import com.opens.bigdafork.common.base.exception.LoadConfigException;
 import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Observer;
 
 /**
  * This is a config load utility.
  */
-public final class EnvConfigsLoader extends AbstractBasicObservable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EnvConfigsLoader.class);
+public final class EnvPropertiesConfig
+        extends AbstractPropertiesConfig<EnvPropertiesConfigLoader> {
     private static final Object LOCK = new Object();
 
-    private static EnvConfigsLoader instance = null;
+    private static EnvPropertiesConfig instance = null;
 
-    private EnvConfigProperties configs = null;
-    private boolean status = false;
-
-    private EnvConfigsLoader() {
-        this(null);
+    private EnvPropertiesConfig() {
+        super(true);
     }
 
-    private EnvConfigsLoader(Observer observer) {
-        super(observer);
-        this.load();
-    }
-
-    public static EnvConfigsLoader getInstance() {
+    public static EnvPropertiesConfig getInstance() {
         if (instance == null) {
             synchronized (LOCK) {
                 if (instance == null) {
-                    instance = new EnvConfigsLoader();
+                    instance = new EnvPropertiesConfig();
                 }
             }
         }
         return instance;
+    }
+
+    @Override
+    protected EnvPropertiesConfigLoader newConfigProps() throws LoadConfigException {
+        return new EnvPropertiesConfigLoader();
     }
 
     public String getZookeeperServerPrincipal() {
@@ -98,25 +91,6 @@ public final class EnvConfigsLoader extends AbstractBasicObservable {
 
     public String getUserNameClientKrbPrincipal() {
         return this.getConfig(BigdataUtilsGlobalConstants.USERNAME_CLIENT_KERBEROS_PRINCIPAL);
-    }
-
-    public String getConfig(String keyName) {
-        if (status) {
-            return this.configs.getProperty(keyName);
-        } else {
-            return null;
-        }
-    }
-
-    private void load() {
-        try {
-            configs = new EnvConfigProperties();
-            status = true;
-            notify(status);
-        } catch (LoadConfigException e) {
-            LOGGER.error(e.getMessage());
-            notify(status);
-        }
     }
 
 }

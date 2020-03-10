@@ -1,7 +1,7 @@
 package com.opens.bigdafork.utils.common.util.connect;
 
 import com.opens.bigdafork.common.base.IDo;
-import com.opens.bigdafork.utils.common.config.EnvConfigsLoader;
+import com.opens.bigdafork.utils.common.config.EnvPropertiesConfig;
 import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.StringUtils;
@@ -24,7 +24,7 @@ public class HiveUrlDo implements IDo<Configuration, Configuration> {
     @Override
     public Configuration iDo(Configuration configuration) {
         LOGGER.debug("Hive set url...");
-        EnvConfigsLoader env = EnvConfigsLoader.getInstance();
+        EnvPropertiesConfig env = EnvPropertiesConfig.getInstance();
         String url = StringUtils.format(HIVE_JDBC_URL,
                 env.getZookeeperQuorum(),
                 env.getHivePrincipal());

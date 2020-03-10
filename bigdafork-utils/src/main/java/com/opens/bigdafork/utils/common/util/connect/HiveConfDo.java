@@ -1,6 +1,6 @@
 package com.opens.bigdafork.utils.common.util.connect;
 
-import com.opens.bigdafork.utils.common.config.EnvConfigsLoader;
+import com.opens.bigdafork.utils.common.config.EnvPropertiesConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
@@ -15,7 +15,7 @@ public class HiveConfDo extends ConfDo {
     @Override
     public Configuration prepareConf(Configuration configuration) {
         LOGGER.debug("Hive conf initialize");
-        EnvConfigsLoader env = EnvConfigsLoader.getInstance();
+        EnvPropertiesConfig env = EnvPropertiesConfig.getInstance();
         LOGGER.debug("load core-site file : " + env.getCoreSiteXml());
         configuration.addResource(new Path(env.getCoreSiteXml()));
         return configuration;

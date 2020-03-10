@@ -12,6 +12,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="bigdafork-common" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
+    <orderEntry type="library" name="Maven: org.yaml:snakeyaml:1.15" level="project" />
     <orderEntry type="library" name="Maven: org.apache.hbase:hbase-server:1.0.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.hbase:hbase-protocol:1.0.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.hbase:hbase-client:1.0.2" level="project" />

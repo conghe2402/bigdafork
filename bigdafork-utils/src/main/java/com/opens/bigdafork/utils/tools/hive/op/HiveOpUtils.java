@@ -71,6 +71,18 @@ public final class HiveOpUtils {
         }
     }
 
+    public static Statement getStatement(Connection connection) throws SQLException {
+        return connection.createStatement();
+    }
+
+    public static void executeStatement(Statement statement, String sql) throws SQLException {
+        statement.executeUpdate(sql);
+    }
+
+    public static ResultSet executeStatementQry(Statement statement, String sql) throws SQLException {
+        return statement.executeQuery(sql);
+    }
+
     public static ResultSet execQuery(Connection connection, String ddl) throws SQLException {
         Statement stmt = connection.createStatement();
         return stmt.executeQuery(ddl);

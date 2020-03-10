@@ -2,7 +2,7 @@ package com.opens.bigdafork.utils.common.util.connect;
 
 import com.google.common.collect.Lists;
 import com.opens.bigdafork.common.base.IDo;
-import com.opens.bigdafork.utils.common.config.EnvConfigsLoader;
+import com.opens.bigdafork.utils.common.config.EnvPropertiesConfig;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public final class ConnectMaster {
 
     public static List<IDo<Configuration, Configuration>> getConnStrategy(String req) {
         List<IDo<Configuration, Configuration>> connDoList = Lists.newArrayList();
-        String saveMode = EnvConfigsLoader.getInstance().getSaveMode();
+        String saveMode = EnvPropertiesConfig.getInstance().getSaveMode();
         if (REQ_HBASE_CONN.equals(req)) {
             //1 configs
             connDoList.add(new HBaseConfDo());

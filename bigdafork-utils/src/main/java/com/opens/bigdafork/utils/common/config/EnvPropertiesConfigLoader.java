@@ -1,6 +1,6 @@
 package com.opens.bigdafork.utils.common.config;
 
-import com.opens.bigdafork.common.base.AbstractConfigProperties;
+import com.opens.bigdafork.common.base.config.props.AbstractPropertiesConfigLoader;
 import com.opens.bigdafork.common.base.exception.LoadConfigException;
 import com.opens.bigdafork.utils.common.util.FastjsonUtils;
 import org.apache.commons.lang.StringUtils;
@@ -17,14 +17,12 @@ import org.slf4j.LoggerFactory;
 /**
  * initialize context environment of application.
  */
-public class EnvConfigProperties extends AbstractConfigProperties {
+public class EnvPropertiesConfigLoader extends AbstractPropertiesConfigLoader {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EnvConfigProperties.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EnvPropertiesConfigLoader.class);
 
-    private Properties properties;
-
-    public EnvConfigProperties() throws LoadConfigException {
-        initialize();
+    public EnvPropertiesConfigLoader() throws LoadConfigException {
+        load();
     }
 
     /**
@@ -35,22 +33,18 @@ public class EnvConfigProperties extends AbstractConfigProperties {
      * @throws LoadConfigException
      */
     @Override
-    public void initialize() throws LoadConfigException {
+    public void load() throws LoadConfigException {
         if (this.isLoadSuccess()) {
             return;
         }
         LOGGER.debug("initialize cluster environment...");
-        properties = new Properties();
 
         String contextPropertiesJson = System.getProperty(JVM_CONTEXT_PROPERTIES);
         if (StringUtils.isNotBlank(contextPropertiesJson)) {
             LOGGER.debug("try to load properties file from properties json");
             LOGGER.debug(contextPropertiesJson);
             Properties propsFromJson = FastjsonUtils.convertJSONToObject(contextPropertiesJson, Properties.class);
-            if (propsFromJson != null) {
-                properties.putAll(propsFromJson);
-                this.setLoadSuccess(true);
-            }
+            loadProperties(propsFromJson);
         }
 
         String path = System.getProperty(JVM_PROPERTIES_PATH);
@@ -58,22 +52,11 @@ public class EnvConfigProperties extends AbstractConfigProperties {
             this.setLoadSuccess(loadExternalConfig(path));
         }
         if (!this.isLoadSuccess()) {
-            this.setLoadSuccess(loadRootClassPathConfig());
+            this.setLoadSuccess(loadConfigFromClasspathRoot(CLASSPATH_PROPERTIES_FILE_NAME));
         }
 
         if (!this.isLoadSuccess()) {
             throw new LoadConfigException();
         }
-    }
-
-    /**
-     * Try to load properties in inner classpath root,
-     * if the file does not exist in classpath root directory, this method will return false.
-     * @return
-     */
-    private boolean loadRootClassPathConfig() {
-        LOGGER.debug("try to load properties file in root classpath root");
-        return loadConfigInputStream(EnvConfigProperties.class
-                .getClassLoader().getResourceAsStream(CLASSPATH_PROPERTIES_FILE_NAME));
     }
 }

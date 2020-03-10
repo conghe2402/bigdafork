@@ -40,5 +40,7 @@ public final class ShellUtil {
         }
     }
 
-    private ShellUtil() {}
+    private ShellUtil() {
+
+    }
 }

@@ -1,8 +1,10 @@
 package com.opens.bigdafork.utils.common.util.connect;
 
-import com.opens.bigdafork.common.base.AbstractBasicObservable;
+import com.opens.bigdafork.common.base.observe.AbstractBasicObservable;
 import com.opens.bigdafork.common.base.IDo;
-import com.opens.bigdafork.utils.common.config.EnvConfigsLoader;
+import com.opens.bigdafork.common.base.observe.AbstractBasicObserver;
+import com.opens.bigdafork.common.base.observe.NotifyEvent;
+import com.opens.bigdafork.utils.common.config.EnvPropertiesConfig;
 import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
 import com.opens.bigdafork.utils.common.exceptions.InvalidLoginInfoException;
 import org.apache.commons.lang.StringUtils;
@@ -17,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Observer;
 
 /**
  * This is a common login module of hadoop platform using kerberos authentication.
@@ -38,7 +39,7 @@ public class HadoopLoginDo extends AbstractBasicObservable implements IDo<Config
         this(null);
     }
 
-    public HadoopLoginDo(Observer observer) {
+    public HadoopLoginDo(AbstractBasicObserver observer) {
         super(observer);
     }
 
@@ -53,11 +54,17 @@ public class HadoopLoginDo extends AbstractBasicObservable implements IDo<Config
             loginHadoop(entries);
         } catch (InvalidLoginInfoException e) {
             LOGGER.error(e.getMessage());
-            this.notify(false);
-
+            NotifyEvent event = new NotifyEvent();
+            event.setStatus(false);
+            event.setMsg(e.getMessage());
+            this.notify(event);
         } catch (IOException e) {
+            LOGGER.error(e.getMessage());
             e.printStackTrace();
-            this.notify(false);
+            NotifyEvent event = new NotifyEvent();
+            event.setStatus(false);
+            event.setMsg(e.getMessage());
+            this.notify(event);
         }
 
         return initializeOthers(entries);
@@ -68,7 +75,7 @@ public class HadoopLoginDo extends AbstractBasicObservable implements IDo<Config
     }
 
     private synchronized void loginHadoop(Configuration configuration) throws IOException, InvalidLoginInfoException {
-        EnvConfigsLoader env = EnvConfigsLoader.getInstance();
+        EnvPropertiesConfig env = EnvPropertiesConfig.getInstance();
         String principalName = env.getUserNameClientKrbPrincipal();
         String keyTabFilePath = env.getUserNameClientKrbKeyTabFile();
         String krb5ConfFilePath = env.getJSecurityKrb5Conf();
@@ -150,7 +157,7 @@ public class HadoopLoginDo extends AbstractBasicObservable implements IDo<Config
     }
 
     private void setZKServerPrincipal() throws InvalidLoginInfoException {
-        EnvConfigsLoader env = EnvConfigsLoader.getInstance();
+        EnvPropertiesConfig env = EnvPropertiesConfig.getInstance();
         String zkServerPrincipalKey = env.getZookeeperServerPrincipalKey();
         String zkServerPrincipal = env.getZookeeperServerPrincipal();
         System.setProperty(zkServerPrincipalKey, zkServerPrincipal);
@@ -165,7 +172,7 @@ public class HadoopLoginDo extends AbstractBasicObservable implements IDo<Config
     }
 
     private void setJaasConf() throws InvalidLoginInfoException {
-        EnvConfigsLoader env = EnvConfigsLoader.getInstance();
+        EnvPropertiesConfig env = EnvPropertiesConfig.getInstance();
         String loginContextName = env.getLoginContextName();
         if (StringUtils.isBlank(loginContextName)) {
             throw new InvalidLoginInfoException("JAAS login contextName is invalid");
