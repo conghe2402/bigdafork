@@ -13,6 +13,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="bigdafork-utils" />
     <orderEntry type="module" module-name="bigdafork-common" />
+    <orderEntry type="library" name="Maven: org.yaml:snakeyaml:1.15" level="project" />
     <orderEntry type="library" name="Maven: org.spark-project.hive:hive-jdbc:1.2.1.spark" level="project" />
     <orderEntry type="library" name="Maven: org.spark-project.hive:hive-common:1.2.1.spark" level="project" />
     <orderEntry type="library" name="Maven: org.apache.ant:ant:1.9.1" level="project" />
