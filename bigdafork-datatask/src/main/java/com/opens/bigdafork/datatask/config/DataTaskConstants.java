@@ -41,5 +41,28 @@ public final class DataTaskConstants {
 
     public static final String RECORD_SEPERATOR = "\u0905";
 
+    // C2 custom yaml CONFIG def
+    /*
+    tasks:
+        params:
+            a1: 3
+            map: 3
+        sql1:
+            engine:
+                normal: 1
+                timeout: 120
+                standby: 2
+            params:
+                mapreduec.map.memory.mb: 4096
+                mapreduce.reduce.java.opts: "+XX: DDD  –Xms40m"
+                mapreduce.reduce.java1.opts: "+XX: DDD  –Xms40m"
+     */
+    public static final String FIELD_TASK = "tasks";
+    public static final String FIELD_PARAMS = "params";
+    public static final String FIELD_SQL_ENGINE = "engine";
+    public static final String FIELD_SQL_ENGINE_NORMAL = "normal";
+    public static final String FIELD_SQL_ENGINE_STANDBY = "standby";
+    public static final String FIELD_SQL_ENGINE_TIMEOUT = "timeout";
+
     private DataTaskConstants() {}
 }

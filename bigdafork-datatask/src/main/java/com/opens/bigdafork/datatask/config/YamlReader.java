@@ -27,14 +27,17 @@ public class YamlReader extends AbstractYamlConfigLoader {
             String itemKey = item.getKey();
             C2Config c2Config = new C2Config();
             String keyName = String.format("%s.%s", taskName, itemKey);
-            if ("params".equalsIgnoreCase(itemKey)) {
+            if (DataTaskConstants.FIELD_PARAMS.equalsIgnoreCase(itemKey)) {
                 //common config
                 c2Config.setParsms(getParamsList(keyName));
             } else if (itemKey.trim().toLowerCase().startsWith(DataTaskConstants.SQL_INDEX_PREFIX)) {
                 //in individual
-                String normalKey = String.format("%s.engine.%s", keyName, "normal");
-                String timeoutKey = String.format("%s.engine.%s", keyName, "timeout");
-                String standbyKey = String.format("%s.engine.%s", keyName, "standby");
+                String normalKey = String.format("%s.%s.%s", keyName,
+                        DataTaskConstants.FIELD_SQL_ENGINE, DataTaskConstants.FIELD_SQL_ENGINE_NORMAL);
+                String timeoutKey = String.format("%s.%s.%s", keyName,
+                        DataTaskConstants.FIELD_SQL_ENGINE, DataTaskConstants.FIELD_SQL_ENGINE_TIMEOUT);
+                String standbyKey = String.format("%s.%s.%s",
+                        DataTaskConstants.FIELD_SQL_ENGINE, DataTaskConstants.FIELD_SQL_ENGINE_STANDBY);
                 if (this.getValue(normalKey) != null) {
                     c2Config.setUseEngine((int)this.getValue(normalKey));
                 }
@@ -44,10 +47,11 @@ public class YamlReader extends AbstractYamlConfigLoader {
                 if (this.getValue(standbyKey) != null) {
                     c2Config.setStandby((int)this.getValue(standbyKey));
                 }
-                String sqlParamsKey = String.format("%s.%s", keyName, "params");
+                String sqlParamsKey = String.format("%s.%s", keyName, DataTaskConstants.FIELD_PARAMS);
                 c2Config.setParsms(getParamsList(sqlParamsKey));
+            } else {
+                continue;
             }
-
             resultMap.put(itemKey, c2Config);
         }
         return resultMap;

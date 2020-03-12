@@ -157,7 +157,7 @@ public final class TaskManager {
             YamlReader yamlReader = new YamlReader(this.c2ConfigPath);
             try {
                 //key: sql1 ; value ： items
-                c2ItemsForEachSQL = yamlReader.getAllParamsMap(jobBean.getClassName());
+                c2ItemsForEachSQL = yamlReader.getAllParamsMap(DataTaskConstants.FIELD_TASK);
             } catch (Exception e) {
                 LOGGER.error(String.format("self-defined c2 config is invalid. \n %s"), c2ConfigPath);
             }
@@ -177,7 +177,7 @@ public final class TaskManager {
         c2ItemsForTask = c2ConfigObj;
         if (c2ItemsForTask.getParsms() == null
                 || c2ItemsForTask.getParsms().isEmpty()) {
-            LOGGER.warn(String.format("Preset Res file is not found or is empty!!! \r\n %s",
+            LOGGER.warn(String.format("Preset Res file is not found or is empty!!! \n %s",
                     c2ConfigFile));
         }
     }
@@ -233,7 +233,8 @@ public final class TaskManager {
             nasC2JavaDir.mkdirs();
         }
 
-        String nasC2ConfigPath = nasC2PathBuilder.append(clazz).toString();
+        String childPath = clazz.replaceAll(".", "/");
+        String nasC2ConfigPath = nasC2PathBuilder.append(childPath).toString();
         File customC2File = new File(nasC2ConfigPath);
         //self-defined params.c2 is file and exists.
         boolean hasFound = customC2File.isFile() && customC2File.exists();
@@ -367,6 +368,10 @@ public final class TaskManager {
 
         submitTaskInfo.setSqlIndex(sqlIndex);
         C2Config configsOfSql;
+        LOGGER.info(String.format("use c2 preset config for %s", sqlIndex));
+        configsOfSql = c2ItemsForTask.getCopy();
+        submitTaskInfo.setConfigs(configsOfSql.getParsms());
+
         if (this.c2ItemsForEachSQL.containsKey(sqlIndex)) {
             LOGGER.info(String.format("use c2 custom config for %s", sqlIndex));
             configsOfSql = this.c2ItemsForEachSQL.get(sqlIndex).getCopy();
@@ -381,9 +386,10 @@ public final class TaskManager {
             if (configsOfSql.getTimeout() >= 0) {
                 submitTaskInfo.setTimeout(configsOfSql.getTimeout());
             }
-        } else {
-            LOGGER.info(String.format("use c2 preset config for %s", sqlIndex));
-            configsOfSql = c2ItemsForTask.getCopy();
+
+        } else if (this.c2ItemsForEachSQL.containsKey(DataTaskConstants.FIELD_PARAMS)) {
+            LOGGER.info(String.format("use c2 custom params config for %s", sqlIndex));
+            configsOfSql = this.c2ItemsForEachSQL.get(DataTaskConstants.FIELD_PARAMS).getCopy();
         }
         submitTaskInfo.setConfigs(configsOfSql.getParsms());
 
