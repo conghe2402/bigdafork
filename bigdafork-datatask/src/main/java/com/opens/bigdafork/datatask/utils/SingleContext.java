@@ -37,6 +37,9 @@ public final class SingleContext {
     @Setter @Getter
     private String c2CofigPath;
 
+    @Setter @Getter
+    private String nasRootPath;
+
     public static SingleContext get() {
         return INSTANCE;
     }

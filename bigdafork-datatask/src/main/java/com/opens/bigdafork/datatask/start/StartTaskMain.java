@@ -47,6 +47,7 @@ public final class StartTaskMain {
         String c1Path = envConfig.getConfig(DataTaskConstants.KEY_CONFIG_C1_PATH);
         String c2Path = envConfig.getConfig(DataTaskConstants.KEY_CONFIG_C2_PATH);
         String recordPath = envConfig.getConfig(DataTaskConstants.KEY_RECORD_DIR);
+        String nasRootPath = envConfig.getConfig(DataTaskConstants.KEY_NAS_CONFIG_PATH);
 
         WorkRecorder workRecorder = new WorkRecorder(jobBean, recordPath);
         RecordNotifyer recordNotifyer = new RecordNotifyer(workRecorder);
@@ -63,6 +64,7 @@ public final class StartTaskMain {
         SingleContext.get().setWorkRecorder(workRecorder);
         SingleContext.get().setRecordNotifyer(recordNotifyer);
         SingleContext.get().setC2CofigPath(c2Path);
+        SingleContext.get().setNasRootPath(nasRootPath);
 
         //initialize work object and execute
         try {

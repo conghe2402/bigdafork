@@ -54,7 +54,7 @@ public class YamlReader extends AbstractYamlConfigLoader {
     }
 
     public List<String> getParamsList(String key) throws NullPointerException {
-        List<String> params = new ArrayList<String>();
+        List<String> params = new ArrayList<>();
         HashMap<String, Object> hashMap = (HashMap<String, Object>)this.getValue(key);
         for (Map.Entry<String, Object> item : hashMap.entrySet()) {
             String itemKey = item.getKey();
@@ -68,6 +68,21 @@ public class YamlReader extends AbstractYamlConfigLoader {
 
     public static void main(String[] args) {
         YamlReader reader = new YamlReader("D:\\github\\bigdafork\\bigdafork-datatask\\config\\cutom\\params.c2");
+
+        Map<String, C2Config> map = reader.getAllParamsMap("c1\\.test");
+        for (String k: map.keySet()) {
+            System.out.println(k);
+            System.out.println(String.format("engine : %s ; standby : %s ; timeout : %s",
+                    map.get(k).getUseEngine(),
+                    map.get(k).getStandby(),
+                    map.get(k).getTimeout()));
+            if (map.get(k).getParsms() != null) {
+                for (int i = 0; i < map.get(k).getParsms().size(); i++) {
+                    System.out.println("config: " + map.get(k).getParsms().get(i));
+                }
+            }
+        }
+        /*
         List<String>  commParams = reader.getParamsList("xxxTaskName.sql2.params");
         for (String a : commParams) {
             System.out.println(a);
@@ -84,5 +99,6 @@ public class YamlReader extends AbstractYamlConfigLoader {
         }
 
         System.out.println(reader.getValue("xxxTaskName.sql1.engine.normal1"));
+        */
     }
 }

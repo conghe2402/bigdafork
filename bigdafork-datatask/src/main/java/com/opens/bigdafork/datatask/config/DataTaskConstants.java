@@ -7,6 +7,7 @@ public final class DataTaskConstants {
     public static final String KEY_CONFIG_C1_PATH = "config.c1.path";
     public static final String KEY_CONFIG_C2_PATH = "config.c2.path";
     public static final String KEY_RECORD_DIR = "record.dir";
+    public static final String KEY_NAS_CONFIG_PATH = "nas.config.path";
     public static final String ENV_CONFIG = "env.properties";
 
 
