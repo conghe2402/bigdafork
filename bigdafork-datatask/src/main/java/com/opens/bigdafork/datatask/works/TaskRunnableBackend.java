@@ -172,6 +172,16 @@ public class TaskRunnableBackend {
     }
 
     public void close() {
+        try {
+            if (hiveDDLConnection != null) {
+                hiveDDLConnection.close();
+            }
+            if (hiveConnection != null) {
+                hiveConnection.close();
+            }
+        } catch (SQLException e) {
+
+        }
         executor.shutdownNow();
     }
 
