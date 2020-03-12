@@ -75,7 +75,7 @@ public class YamlReader extends AbstractYamlConfigLoader {
 
         Map<String, C2Config> map = reader.getAllParamsMap("tasks");
         for (String k: map.keySet()) {
-            System.out.println(k);
+            System.out.println("key is " + k);
             System.out.println(String.format("engine : %s ; standby : %s ; timeout : %s",
                     map.get(k).getUseEngine(),
                     map.get(k).getStandby(),
