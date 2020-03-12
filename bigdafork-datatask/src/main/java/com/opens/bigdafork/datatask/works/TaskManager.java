@@ -101,12 +101,6 @@ public final class TaskManager {
             return null;
         }
 
-        if (isDDL(sql)) {
-            //submit to ddl engine to exe
-            taskRunnableBackend.runDDLTask(sql, defaultDMLEngineOfTask);
-            return null;
-        }
-
         //set cmd
         if (sql.trim().startsWith("set ")) {
             String[] arr = sql.split(";");
@@ -116,6 +110,12 @@ public final class TaskManager {
                     this.collectSetCmdOfOneSql.add(item);
                 }
             }
+            return null;
+        }
+
+        if (isDDL(sql)) {
+            //submit to ddl engine to exe
+            taskRunnableBackend.runDDLTask(sql, defaultDMLEngineOfTask);
             return null;
         }
 
