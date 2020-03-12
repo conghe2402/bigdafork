@@ -180,7 +180,7 @@ public class TaskRunnableBackend {
                 hiveConnection.close();
             }
         } catch (SQLException e) {
-
+            LOGGER.error(String.format("close hive connection fail, caused by ", e.getMessage()));
         }
         executor.shutdownNow();
     }
