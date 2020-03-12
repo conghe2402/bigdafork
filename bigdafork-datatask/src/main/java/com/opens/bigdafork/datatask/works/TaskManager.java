@@ -29,6 +29,7 @@ public final class TaskManager {
         DataTaskConstants.HIVE_ON_SPARK_NAME,
         DataTaskConstants.SPARK_SQL_NAME};
     private static TaskManager instance;
+    private final String nasRootPath = SingleContext.get().getNasRootPath();
 
     private TaskRunnableBackend taskRunnableBackend = new TaskRunnableBackend();
     private String c2ConfigPath;
@@ -147,19 +148,19 @@ public final class TaskManager {
      */
     private void loadC2OfTask(int useEngine, int useResLevel,
                               int standbyEngine, int timeout) {
-        if (useResLevel == DataTaskConstants.C2_RES_LEVEL_DEFAULT &&
-                (hasCustomC2Config() || hasNasCustomC2Config())) {
+        // load preset c2
+        loadPresetC2Config(useEngine, useResLevel, standbyEngine, timeout);
+
+        // load custom c2
+        if (hasCustomC2Config() || hasNasCustomC2Config()) {
             //try to load task c2 config if exists and resourceLevel is default.
             YamlReader yamlReader = new YamlReader(this.c2ConfigPath);
             try {
                 //key: sql1 ; value ： items
                 c2ItemsForEachSQL = yamlReader.getAllParamsMap(jobBean.getClassName());
-            } catch (NullPointerException e) {
-                LOGGER.error(String.format("self-defined c2 config is invalid. \r\n %s"), c2ConfigPath);
-                loadPresetC2Config(useEngine, useResLevel, standbyEngine, timeout);
+            } catch (Exception e) {
+                LOGGER.error(String.format("self-defined c2 config is invalid. \n %s"), c2ConfigPath);
             }
-        } else {
-            loadPresetC2Config(useEngine, useResLevel, standbyEngine, timeout);
         }
     }
 
@@ -176,7 +177,7 @@ public final class TaskManager {
         c2ItemsForTask = c2ConfigObj;
         if (c2ItemsForTask.getParsms() == null
                 || c2ItemsForTask.getParsms().isEmpty()) {
-            LOGGER.warn(String.format("Res file is not found or is empty!!! \r\n %s",
+            LOGGER.warn(String.format("Preset Res file is not found or is empty!!! \r\n %s",
                     c2ConfigFile));
         }
     }
@@ -213,20 +214,33 @@ public final class TaskManager {
         return 0 >= resLvl && resLvl <= 4;
     }
 
-    // TODO: 2020/3/10  
     private boolean hasNasCustomC2Config() {
-        String nasC2Dir = "";
+        String clazz = jobBean.getClassName();
 
-        if (StringUtils.isBlank(nasC2Dir)) {
-            LOGGER.debug("get the business job script path fail");
+        if (StringUtils.isBlank(nasRootPath)) {
+            LOGGER.debug("get the NAS C2 path fail");
             return false;
         }
 
+        StringBuilder nasC2PathBuilder = new StringBuilder(nasRootPath);
+        if (!nasRootPath.endsWith("\\") && !nasRootPath.endsWith("/")) {
+            nasC2PathBuilder.append("/");
+        }
+        nasC2PathBuilder.append("custom_c2/java/");
 
-        File customC2File = new File(c2ConfigPath);
+        File nasC2JavaDir = new File(nasC2PathBuilder.toString());
+        if (!nasC2JavaDir.exists()) {
+            nasC2JavaDir.mkdirs();
+        }
+
+        String nasC2ConfigPath = nasC2PathBuilder.append(clazz).toString();
+        File customC2File = new File(nasC2ConfigPath);
         //self-defined params.c2 is file and exists.
-        //return customC2File.isFile() && customC2File.exists();
-        return false;
+        boolean hasFound = customC2File.isFile() && customC2File.exists();
+        if (hasFound) {
+            c2ConfigPath = nasC2ConfigPath;
+        }
+        return hasFound;
     }
 
     private boolean hasCustomC2Config() {
@@ -355,16 +369,21 @@ public final class TaskManager {
         C2Config configsOfSql;
         if (this.c2ItemsForEachSQL.containsKey(sqlIndex)) {
             LOGGER.info(String.format("use c2 custom config for %s", sqlIndex));
-            configsOfSql = this.c2ItemsForEachSQL.get(sqlIndex);
+            configsOfSql = this.c2ItemsForEachSQL.get(sqlIndex).getCopy();
+
             //get custom c2 engine config
             if (isLegalEngine(configsOfSql.getUseEngine())) {
                 submitTaskInfo.setUseEngine(configsOfSql.getUseEngine());
             }
-            submitTaskInfo.setStandbyEngine(configsOfSql.getStandby());
-            submitTaskInfo.setTimeout(configsOfSql.getTimeout());
+            if (isLegalEngine(configsOfSql.getStandby())) {
+                submitTaskInfo.setStandbyEngine(configsOfSql.getStandby());
+            }
+            if (configsOfSql.getTimeout() >= 0) {
+                submitTaskInfo.setTimeout(configsOfSql.getTimeout());
+            }
         } else {
             LOGGER.info(String.format("use c2 preset config for %s", sqlIndex));
-            configsOfSql = c2ItemsForTask;
+            configsOfSql = c2ItemsForTask.getCopy();
         }
         submitTaskInfo.setConfigs(configsOfSql.getParsms());
 
