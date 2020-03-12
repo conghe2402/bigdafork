@@ -36,7 +36,7 @@ public class YamlReader extends AbstractYamlConfigLoader {
                         DataTaskConstants.FIELD_SQL_ENGINE, DataTaskConstants.FIELD_SQL_ENGINE_NORMAL);
                 String timeoutKey = String.format("%s.%s.%s", keyName,
                         DataTaskConstants.FIELD_SQL_ENGINE, DataTaskConstants.FIELD_SQL_ENGINE_TIMEOUT);
-                String standbyKey = String.format("%s.%s.%s",
+                String standbyKey = String.format("%s.%s.%s", keyName,
                         DataTaskConstants.FIELD_SQL_ENGINE, DataTaskConstants.FIELD_SQL_ENGINE_STANDBY);
                 if (this.getValue(normalKey) != null) {
                     c2Config.setUseEngine((int)this.getValue(normalKey));
@@ -73,7 +73,7 @@ public class YamlReader extends AbstractYamlConfigLoader {
     public static void main(String[] args) {
         YamlReader reader = new YamlReader("D:\\github\\bigdafork\\bigdafork-datatask\\config\\cutom\\params.c2");
 
-        Map<String, C2Config> map = reader.getAllParamsMap("c1\\.test");
+        Map<String, C2Config> map = reader.getAllParamsMap("tasks");
         for (String k: map.keySet()) {
             System.out.println(k);
             System.out.println(String.format("engine : %s ; standby : %s ; timeout : %s",
