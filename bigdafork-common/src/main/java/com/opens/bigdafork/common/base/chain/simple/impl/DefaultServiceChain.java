@@ -14,15 +14,14 @@ import java.util.List;
  * 1.support proxy logic of every part .
  * 2.support extensibility for chain part logic.
  */
-public class DefaultServiceChain<T extends ChainContext, R extends ChainContext,
-         I extends ChainContext>
-        implements IServiceChain<T, R, I, Object> {
+public class DefaultServiceChain<C extends ChainContext>
+        implements IServiceChain<C, C, C, Object> {
 
-    private List<IChainPart<T, R>> chainHub = new ArrayList<>();
+    private List<IChainPart<C, C>> chainHub = new ArrayList<>();
 
     private ProxyFactory proxyFactory = new ProxyFactory();
     private IProxyAddWork proxyAddWork;
-    private ChainContext context;
+    private C context;
 
     public DefaultServiceChain() {
 
@@ -33,13 +32,13 @@ public class DefaultServiceChain<T extends ChainContext, R extends ChainContext,
     }
 
     @Override
-    public void init(I chainContext) {
+    public void init(C chainContext) {
         this.context = chainContext;
     }
 
     @Override
-    public IServiceChain<T, R, I, Object> addChainPart(
-            IChainPart<T, R> part) {
+    public IServiceChain<C, C, C, Object> addChainPart(
+            IChainPart<C, C> part) {
         if (proxyAddWork == null) {
             chainHub.add(part);
         } else {
@@ -54,9 +53,9 @@ public class DefaultServiceChain<T extends ChainContext, R extends ChainContext,
      */
     @Override
     public Object run() {
-        ChainContext rc = context;
-        for (IChainPart chainPart : chainHub) {
-            rc = (ChainContext)chainPart.iDo(rc);
+        C rc = context;
+        for (IChainPart<C, C> chainPart : chainHub) {
+            rc = chainPart.iDo(rc);
             if (rc.getStop()) {
                 break;
             }
@@ -68,12 +67,13 @@ public class DefaultServiceChain<T extends ChainContext, R extends ChainContext,
      * ProxyFactory.
      */
     private class ProxyFactory {
-        public IChainPart makePoxPart(Object chainPartParam,
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public IChainPart<C, C> makePoxPart(Object chainPartParam,
                                           IProxyAddWork proxyAddWorkParam) {
             ProxyChainPart proxyChainPart = new ProxyChainPart(chainPartParam, proxyAddWorkParam);
             ClassLoader loader = chainPartParam.getClass().getClassLoader();
             Class[] interfaces = chainPartParam.getClass().getSuperclass().getInterfaces();
-            return (IChainPart)Proxy.newProxyInstance(loader, interfaces, proxyChainPart);
+            return (IChainPart<C, C>)Proxy.newProxyInstance(loader, interfaces, proxyChainPart);
         }
     }
 
@@ -114,11 +114,11 @@ public class DefaultServiceChain<T extends ChainContext, R extends ChainContext,
     /**
      * What should proxy do.
      */
-    public interface IProxyAddWork {
-        void doBefore(ChainContext arg);
+    public interface IProxyAddWork<C> {
+        void doBefore(C arg);
 
-        void doAfter(ChainContext arg);
+        void doAfter(C arg);
 
-        void doException(ChainContext arg, Exception e);
+        void doException(C arg, Exception e);
     }
 }
