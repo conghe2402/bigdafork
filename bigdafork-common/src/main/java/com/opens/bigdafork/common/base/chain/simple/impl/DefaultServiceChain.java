@@ -20,14 +20,14 @@ public class DefaultServiceChain<C extends ChainContext>
     private List<IChainPart<C, C>> chainHub = new ArrayList<>();
 
     private ProxyFactory proxyFactory = new ProxyFactory();
-    private IProxyAddWork proxyAddWork;
+    private IProxyAddWork<C> proxyAddWork;
     private C context;
 
     public DefaultServiceChain() {
 
     }
 
-    public DefaultServiceChain(IProxyAddWork proxyAddWork) {
+    public DefaultServiceChain(IProxyAddWork<C> proxyAddWork) {
         this.proxyAddWork = proxyAddWork;
     }
 
@@ -68,7 +68,7 @@ public class DefaultServiceChain<C extends ChainContext>
      */
     private class ProxyFactory {
         @SuppressWarnings({"rawtypes", "unchecked"})
-        public IChainPart<C, C> makePoxPart(Object chainPartParam,
+        public IChainPart<C, C> makePoxPart(IChainPart<C, C> chainPartParam,
                                           IProxyAddWork proxyAddWorkParam) {
             ProxyChainPart proxyChainPart = new ProxyChainPart(chainPartParam, proxyAddWorkParam);
             ClassLoader loader = chainPartParam.getClass().getClassLoader();
@@ -80,23 +80,25 @@ public class DefaultServiceChain<C extends ChainContext>
     /**
      * ProxyChainPart. It is a proxy of ChainPart.
      */
-    public class ProxyChainPart implements InvocationHandler {
-        private Object chainPart;
+    private class ProxyChainPart implements InvocationHandler {
+        private IChainPart<C, C> chainPart;
 
-        private IProxyAddWork proxyAddWork;
+        private IProxyAddWork<C> proxyAddWork;
 
-        public ProxyChainPart(Object chainPart, IProxyAddWork proxyAddWork) {
+        public ProxyChainPart(IChainPart<C, C> chainPart,
+                              IProxyAddWork<C> proxyAddWork) {
             this.chainPart = chainPart;
             this.proxyAddWork = proxyAddWork;
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             Object returnValue;
             if (this.proxyAddWork == null) {
                 returnValue = method.invoke(this.chainPart, args);
             } else {
-                ChainContext cc = (ChainContext)args[0];
+                C cc = (C)args[0];
                 try {
                     this.proxyAddWork.doBefore(cc);
                     returnValue = method.invoke(this.chainPart, args);
