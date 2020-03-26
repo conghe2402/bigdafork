@@ -8,6 +8,10 @@ public final class DataTaskConstants {
     public static final String KEY_CONFIG_C2_PATH = "config.c2.path";
     public static final String KEY_RECORD_DIR = "record.dir";
     public static final String KEY_NAS_CONFIG_PATH = "nas.config.path";
+    public static final String KEY_ENV_CONFIG_PATH = "env.config.path";
+    public static final String USERNAME_CLIENT_KEYTAB_FILE = "username.client.keytab.file";
+    public static final String USERNAME_CLIENT_KERBEROS_PRINCIPAL = "username.client.kerberos.principal";
+
     public static final String ENV_CONFIG = "env.properties";
 
 
@@ -63,6 +67,9 @@ public final class DataTaskConstants {
     public static final String FIELD_SQL_ENGINE_NORMAL = "normal";
     public static final String FIELD_SQL_ENGINE_STANDBY = "standby";
     public static final String FIELD_SQL_ENGINE_TIMEOUT = "timeout";
+
+    public static final String SPARKSQL_RESULT_SUCC = "ebdaComp123";
+    public static final String SPARKSQL_RESULT_FAIL = "ebdaFail123";
 
     private DataTaskConstants() {}
 }

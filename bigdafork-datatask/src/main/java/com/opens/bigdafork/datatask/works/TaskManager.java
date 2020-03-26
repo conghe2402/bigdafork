@@ -116,8 +116,8 @@ public final class TaskManager {
 
         if (isDDL(sql)) {
             //submit to ddl engine to exe
-            taskRunnableBackend.runDDLTask(sql, defaultDMLEngineOfTask);
-            return null;
+            return taskRunnableBackend.runDDLTask(sql, defaultDMLEngineOfTask,
+                    setTaskTypeByApi(apiType, true));
         }
 
         // submit
@@ -152,7 +152,7 @@ public final class TaskManager {
         loadPresetC2Config(useEngine, useResLevel, standbyEngine, timeout);
 
         // load custom c2
-        if (hasCustomC2Config() || hasNasCustomC2Config()) {
+        if (hasNasCustomC2Config() || hasCustomC2Config()) {
             //try to load task c2 config if exists and resourceLevel is default.
             YamlReader yamlReader = new YamlReader(this.c2ConfigPath);
             try {
@@ -233,7 +233,7 @@ public final class TaskManager {
             nasC2JavaDir.mkdirs();
         }
 
-        String childPath = clazz.replaceAll(".", "/");
+        String childPath = clazz.replaceAll("\\.", "/");
         String nasC2ConfigPath = nasC2PathBuilder.append(childPath).toString();
         File customC2File = new File(nasC2ConfigPath);
         //self-defined params.c2 is file and exists.
@@ -251,7 +251,9 @@ public final class TaskManager {
             classFilePath = FileUtils.getPathFromClass(Class.forName(clazz));
         } catch (ClassNotFoundException | IOException e) {
             LOGGER.error("custom c2 config load fail, cause " + e.getMessage());
-            e.printStackTrace();
+            if (LOGGER.isDebugEnabled()) {
+                e.printStackTrace();
+            }
         }
 
         if (StringUtils.isBlank(classFilePath)) {
@@ -359,7 +361,7 @@ public final class TaskManager {
         submitTaskInfo.setSql(sql);
         submitTaskInfo.setStandbyEngine(se);
         submitTaskInfo.setUseEngine(ue);
-        submitTaskInfo.setTaskType(this.setTaskTypeByApi(apiType));
+        submitTaskInfo.setTaskType(this.setTaskTypeByApi(apiType, false));
 
         //check out if there are custom configuration belong to the sql.
         String sqlIndex = DataTaskConstants.SQL_INDEX_PREFIX + this.executeCount;
@@ -367,10 +369,7 @@ public final class TaskManager {
         this.nextSQL();
 
         submitTaskInfo.setSqlIndex(sqlIndex);
-        C2Config configsOfSql;
-        LOGGER.info(String.format("use c2 preset config for %s", sqlIndex));
-        configsOfSql = c2ItemsForTask.getCopy();
-        submitTaskInfo.setConfigs(configsOfSql.getParsms());
+        C2Config configsOfSql = c2ItemsForTask.getCopy();
 
         if (this.c2ItemsForEachSQL.containsKey(sqlIndex)) {
             LOGGER.info(String.format("use c2 custom config for %s", sqlIndex));
@@ -390,7 +389,10 @@ public final class TaskManager {
         } else if (this.c2ItemsForEachSQL.containsKey(DataTaskConstants.FIELD_PARAMS)) {
             LOGGER.info(String.format("use c2 custom params config for %s", sqlIndex));
             configsOfSql = this.c2ItemsForEachSQL.get(DataTaskConstants.FIELD_PARAMS).getCopy();
+        } else {
+            LOGGER.info(String.format("use c2 preset config for %s", sqlIndex));
         }
+
         submitTaskInfo.setConfigs(configsOfSql.getParsms());
 
         //pass param by coding.
@@ -415,15 +417,21 @@ public final class TaskManager {
         return taskRunnableBackend.runTask(submitTaskInfo);
     }
 
-    private RTaskType setTaskTypeByApi(ApiType apiType) {
+    private RTaskType setTaskTypeByApi(ApiType apiType, boolean isDDL) {
+        if (isDDL) {
+            if (apiType == ApiType.executeQueryRs) {
+                return TaskRunnableBackend.RTaskType.ddlset;
+            } else {
+                return TaskRunnableBackend.RTaskType.ddl;
+            }
+        }
+
         if (apiType == ApiType.executeQueryNum) {
             return TaskRunnableBackend.RTaskType.num;
         } else if (apiType == ApiType.executeQueryRs) {
             return TaskRunnableBackend.RTaskType.set;
         } else if (apiType == ApiType.executeUpdate) {
             return TaskRunnableBackend.RTaskType.sql;
-        } else if (apiType == ApiType.executeDDL) {
-            return TaskRunnableBackend.RTaskType.ddl;
         } else {
             return null;
         }

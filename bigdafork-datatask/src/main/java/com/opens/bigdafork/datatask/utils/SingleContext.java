@@ -40,6 +40,15 @@ public final class SingleContext {
     @Setter @Getter
     private String nasRootPath;
 
+    @Setter @Getter
+    private String userKeyTabFile;
+
+    @Setter @Getter
+    private String userPrincipal;
+
+    @Setter @Getter
+    private String envConfigPath;
+
     public static SingleContext get() {
         return INSTANCE;
     }

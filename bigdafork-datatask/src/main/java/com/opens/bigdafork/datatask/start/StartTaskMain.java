@@ -18,6 +18,10 @@ import org.slf4j.LoggerFactory;
 public final class StartTaskMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(StartTaskMain.class);
 
+    static {
+        //load sth
+    }
+
     public static void main(String[] args) {
         LOGGER.info("[[NEW]] task start... ");
         /*
@@ -48,6 +52,9 @@ public final class StartTaskMain {
         String c2Path = envConfig.getConfig(DataTaskConstants.KEY_CONFIG_C2_PATH);
         String recordPath = envConfig.getConfig(DataTaskConstants.KEY_RECORD_DIR);
         String nasRootPath = envConfig.getConfig(DataTaskConstants.KEY_NAS_CONFIG_PATH);
+        String userKeyTabFile = envConfig.getConfig(DataTaskConstants.USERNAME_CLIENT_KEYTAB_FILE);
+        String userPrincipal = envConfig.getConfig(DataTaskConstants.USERNAME_CLIENT_KERBEROS_PRINCIPAL);
+        String envConfigPath = envConfig.getConfig(DataTaskConstants.KEY_ENV_CONFIG_PATH);
 
         WorkRecorder workRecorder = new WorkRecorder(jobBean, recordPath);
         RecordNotifyer recordNotifyer = new RecordNotifyer(workRecorder);

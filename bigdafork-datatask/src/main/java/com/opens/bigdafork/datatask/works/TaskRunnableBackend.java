@@ -12,17 +12,22 @@ import com.opens.bigdafork.datatask.works.arrange.*;
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
 import lombok.Data;
+import org.apache.commons.collections.buffer.CircularFifoBuffer;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -37,7 +42,10 @@ public class TaskRunnableBackend {
     private Connection hiveConnection;
     private Connection hiveDDLConnection;
     private JobBean jobBean;
-    private DefaultServiceChain<TaskChainContext, TaskChainContext, TaskChainContext> serviceChain;
+    private DefaultServiceChain<TaskChainContext> serviceChain;
+    private String userKeyTabFile = SingleContext.get().getUserKeyTabFile();
+    private String userPrincipal = SingleContext.get().getUserPrincipal();
+    private String envConfigPath = SingleContext.get().getEnvConfigPath();
 
     public TaskRunnableBackend() {
         notifyer = SingleContext.get().getRecordNotifyer();
@@ -93,22 +101,28 @@ public class TaskRunnableBackend {
         return serviceChain.run();
     }
 
-    public void runDDLTask(String ddl, int engine) throws TaskFailException {
-        LOGGER.info(String.format("\nDDL TASK:\n [\n   tid:\n     %s\n   ddl sql:" +
-                        "\n     %s\n   using engine of %s\n ]",
+    public Object runDDLTask(String ddl, int engine, RTaskType tt) throws TaskFailException {
+        LOGGER.info(String.format("\nDDL TASK:\n [\n   tid:\n     %s\n   type:\n     %s" +
+                        "\n   ddl sql:\n     %s\n   using engine of %s\n ]",
                 SingleContext.get().getTaskId(),
+                tt,
                 ddl,
                 engine));
 
         RTask runnableTask = getRunnableTaskByInfo(engine,
-                RTaskType.ddl,
+                tt,
                 ddl, null);
+        Object result = null;
         try {
-            runSingle(runnableTask);
+            TaskResult taskResult = runSingle(runnableTask);
+            if (tt == RTaskType.ddlset) {
+                result = taskResult.getResultSet();
+            }
         } catch (TaskFailException e) {
             //stop.
             this.notifyer.notifyStopWithoutRecord();
         }
+        return result;
     }
 
     /**
@@ -131,6 +145,10 @@ public class TaskRunnableBackend {
             throw new TaskFailException("run fail : result is not success");
         } catch (InterruptedException |
                 ExecutionException e) {
+            runnableTask.free();
+            if (LOGGER.isDebugEnabled()) {
+                e.printStackTrace();
+            }
             String err = "runSingle execute fail caused by " + e.getMessage();
             LOGGER.error(String.format("runSingle execute fail \n %s \n %s",
                     runnableTask.getSql(), e.getMessage()));
@@ -159,11 +177,16 @@ public class TaskRunnableBackend {
             throw new TaskFailException("run fail : result is not success");
         } catch (InterruptedException |
                 ExecutionException e) {
+            runnableTask.free();
+            if (LOGGER.isDebugEnabled()) {
+                e.printStackTrace();
+            }
             String err = "execute fail caused by " + e.getMessage();
             LOGGER.error(String.format("execute fail caused by: \n %s \n %s",
                     runnableTask.getSql(), e.getMessage()));
             throw new TaskFailException(err);
         } catch (TimeoutException e) {
+            runnableTask.free();
             String err = "execute timeout caused by execute timeout";
             LOGGER.error(String.format("execute timeout \n %s",
                     runnableTask.getSql()));
@@ -252,7 +275,9 @@ public class TaskRunnableBackend {
             return HiveOpUtils.getConnection(configuration);
         } catch (InstantiationException | IllegalAccessException |
                 ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
+            if (LOGGER.isDebugEnabled()) {
+                e.printStackTrace();
+            }
             LOGGER.error("connection get fail! " + e.getMessage());
             throw e;
         }
@@ -360,14 +385,21 @@ public class TaskRunnableBackend {
 
         public abstract TaskResult executeSQL() throws Exception;
         public abstract TaskResult executeDDL() throws Exception;
+        public abstract TaskResult executeDDLSet() throws Exception;
         public abstract TaskResult executeQryRs() throws Exception;
         public abstract TaskResult executeCount() throws Exception;
+
+        public void free() {
+
+        }
 
         @Override
         public TaskResult call() throws Exception {
             TaskResult result;
             if (type == RTaskType.ddl) {
                 result = executeDDL();
+            } else if (type == RTaskType.ddlset) {
+                result = executeDDLSet();
             } else if (type == RTaskType.sql) {
                 result = executeSQL();
             } else if (type == RTaskType.set) {
@@ -393,8 +425,8 @@ public class TaskRunnableBackend {
         }
 
         protected TaskResult executeDDLByEngineName(String engineName) throws Exception {
-            try (Connection hiveConnection = getHiveDDLConnection()) {
-                Statement statement = HiveOpUtils.getStatement(hiveConnection);
+            Connection hiveConnection = getHiveDDLConnection();
+            try(Statement statement = HiveOpUtils.getStatement(hiveConnection)) {
                 HiveOpUtils.executeStatement(statement,
                         String.format("set hive.execution.engine=%s", engineName));
                 HiveOpUtils.executeStatement(statement, this.getSql());
@@ -404,13 +436,23 @@ public class TaskRunnableBackend {
             return result;
         }
 
+        protected TaskResult executeDDLSetByEngineName(String engineName) throws Exception {
+            Connection hiveConnection = getHiveDDLConnection();
+            Statement statement = HiveOpUtils.getStatement(hiveConnection);
+            HiveOpUtils.executeStatement(statement,
+                    String.format("set hive.execution.engine=%s", engineName));
+            ResultSet resultset = HiveOpUtils.executeStatementQry(statement, this.getSql());
+
+            TaskResult result = new TaskResult();
+            result.setSuccess(true);
+            result.setResultSet(resultset);
+            return result;
+        }
+
         protected TaskResult executeSQLByEngineName(String engineName) throws Exception {
             try (Connection hiveConnection = getHiveConnection()) {
                 Statement statement = HiveOpUtils.getStatement(hiveConnection);
-                for (String item : this.getConfigs()) {
-                    HiveOpUtils.executeStatement(statement, String.format("set %s", item));
-                    LOGGER.info(String.format("set configs on %s : %s ", engineName, item));
-                }
+                loadConfigs(statement, engineName);
                 HiveOpUtils.executeStatement(statement,
                         String.format("set hive.execution.engine=%s", engineName));
                 HiveOpUtils.executeStatement(statement, this.getSql());
@@ -423,10 +465,7 @@ public class TaskRunnableBackend {
 
         protected TaskResult qryCountByEngineName(String engineName) throws Exception {
             Statement statement = HiveOpUtils.getStatement(getHiveConnection());
-            for (String item : this.getConfigs()) {
-                HiveOpUtils.executeStatement(statement, String.format("set %s", item));
-                LOGGER.info(String.format("set configs on %s : %s ", engineName, item));
-            }
+            loadConfigs(statement, engineName);
             HiveOpUtils.executeStatement(statement,
                     String.format("set hive.execution.engine=%s", engineName));
             ResultSet resultSet = HiveOpUtils.executeStatementQry(statement, this.getSql());
@@ -442,10 +481,7 @@ public class TaskRunnableBackend {
 
         protected TaskResult qryResultSetByEngineName(String engineName) throws Exception {
             Statement statement = HiveOpUtils.getStatement(getHiveConnection());
-            for (String item : this.getConfigs()) {
-                HiveOpUtils.executeStatement(statement, String.format("set %s", item));
-                LOGGER.info(String.format("set configs on %s : %s ", engineName, item));
-            }
+            loadConfigs(statement, engineName);
             HiveOpUtils.executeStatement(statement,
                     String.format("set hive.execution.engine=%s", engineName));
             ResultSet resultSet = HiveOpUtils.executeStatementQry(statement, this.getSql());
@@ -454,13 +490,20 @@ public class TaskRunnableBackend {
             result.setResultSet(resultSet);
             return result;
         }
+
+        private void loadConfigs(Statement statement, String engineName) throws Exception {
+            for (String item : this.getConfigs()) {
+                HiveOpUtils.executeStatement(statement, String.format("set %s", item));
+                LOGGER.info(String.format("set configs on %s : %s ", engineName, item));
+            }
+        }
     }
 
     /**
      * RTaskType.
      */
     public enum RTaskType {
-        ddl, sql, set, num
+        ddl, ddlset, sql, set, num
     }
 
     /**
@@ -476,6 +519,12 @@ public class TaskRunnableBackend {
         public TaskResult executeSQL() throws Exception {
             LOGGER.info("Hive On Spark SQL execute!");
             return this.executeSQLByEngineName(engineName);
+        }
+
+        @Override
+        public TaskResult executeDDLSet() throws Exception {
+            LOGGER.info("Hive On Spark DDL set execute!");
+            return this.executeDDLSetByEngineName(engineName);
         }
 
         @Override
@@ -517,6 +566,12 @@ public class TaskRunnableBackend {
         }
 
         @Override
+        public TaskResult executeDDLSet() throws Exception {
+            LOGGER.info("Hive On MR DDL set execute!");
+            return this.executeDDLSetByEngineName(engineName);
+        }
+
+        @Override
         public TaskResult executeQryRs() throws Exception {
             LOGGER.info("Hive on MR qry RS execute!");
             return this.qryResultSetByEngineName(engineName);
@@ -536,6 +591,9 @@ public class TaskRunnableBackend {
         private String shellPath;
         private String submitScript;
         private String sqlsFilesPath;
+        private Process proc = null;
+        private Thread errReader;
+        private Thread normalReader;
 
         public SparkSQLTask(RTaskType type, String sql,
                             List<String> configs, String taskId) {
@@ -549,19 +607,22 @@ public class TaskRunnableBackend {
         @Override
         public TaskResult executeSQL() throws Exception {
             LOGGER.info("spark sql execute!");
-            StringBuilder allStatements = new StringBuilder();
-            if (this.getConfigs() != null) {
-                for (String item : this.getConfigs()) {
-                    String setItem = String.format("set %s;", item);
-                    LOGGER.info("set configs on SPARK SQL! " + item);
-                    allStatements.append(setItem);
-                }
-            }
-            allStatements.append(this.getSql());
+            String sqls = prepareSQLWithConfigs();
+            String normalMsg = submitSparkSQL(sqls);
             TaskResult result = new TaskResult();
-            List<String> resultLines = submitSparkShell(this.getSql());
+            result.setSuccess(true);
+            result.setMsg(normalMsg);
+            return result;
+        }
+
+        @Override
+        public TaskResult executeDDL() throws Exception {
+            LOGGER.info("SPARK ddl execute!");
+            TaskResult result = new TaskResult();
+
+            Map<String, CircularFifoBuffer> resultLines = submitSparkShell(this.getSql());
             for (int i = 0; i < resultLines.size(); i++){
-                if (resultLines.get(i).contains("complete123")) {
+                if (resultLines.get(i).contains(DataTaskConstants.SPARKSQL_RESULT_SUCC)) {
                     result.setSuccess(true);
                     return result;
                 } else {
@@ -572,20 +633,8 @@ public class TaskRunnableBackend {
         }
 
         @Override
-        public TaskResult executeDDL() throws Exception {
-            LOGGER.info("SPARK ddl execute!");
-            TaskResult result = new TaskResult();
-
-            List<String> resultLines = submitSparkShell(this.getSql());
-            for (int i = 0; i < resultLines.size(); i++){
-                if (resultLines.get(i).contains("complete123")) {
-                    result.setSuccess(true);
-                    return result;
-                } else {
-                    // err msg.
-                }
-            }
-            throw new TaskFailException("spark sql execute fail.");
+        public TaskResult executeDDLSet() throws Exception {
+            return null;
         }
 
         @Override
@@ -598,9 +647,60 @@ public class TaskRunnableBackend {
             return null;
         }
 
-        private List<String> submitSparkShell(String cmd) throws Exception {
+        private String prepareSQLWithConfigs() {
+            StringBuilder allStatements = new StringBuilder();
+            if (this.getConfigs() != null) {
+                for (String item : this.getConfigs()) {
+                    String setItem = String.format("set %s;", item);
+                    LOGGER.debug("set configs on SPARK SQL " + item);
+                    allStatements.append(setItem);
+                }
+            }
+
+            allStatements.append(this.getSql());
+            return allStatements.toString();
+        }
+
+        private String submitSparkSQL(String sqls) throws Exception {
+            Map<String, CircularFifoBuffer> resultMap = submitSparkShell(sqls);
+            checkoutResult(resultMap.get("1"));
+            checkoutResult(resultMap.get(DataTaskConstants.SPARKSQL_RESULT_FAIL));
+
+            CircularFifoBuffer normalLines = resultMap.get(DataTaskConstants.SPARKSQL_RESULT_SUCC);
+            if (normalLines == null) {
+                throw new TaskFailException("spark sql execute fail.\n caused by script unknown err");
+            }
+
+            StringBuilder normalMsgBuilder = new StringBuilder();
+            int size = normalLines.size();
+            for (int i = 0; i < size; i++) {
+                String nl = normalLines.remove().toString() + "\n";
+                LOGGER.debug(nl);
+                normalMsgBuilder.append(nl);
+            }
+            return normalMsgBuilder.toString();
+        }
+
+        private void checkoutResult(CircularFifoBuffer resultLines) throws Exception {
+            if (resultLines != null) {
+                StringBuilder failMsgBuilder = new StringBuilder();
+                int size = resultLines.size();
+                for (int i = 0; i < size; i++) {
+                    failMsgBuilder.append(resultLines.remove().toString() + "\n");
+                }
+                throw new TaskFailException(String.format("spark sql execute fail.\n caused by %s",
+                        failMsgBuilder.toString()));
+            }
+        }
+
+        private Map<String, CircularFifoBuffer> submitSparkShell(String cmd) throws Exception {
             LOGGER.info("execute cmd");
-            List<String> resultLines = new ArrayList<>();
+            Map<String, CircularFifoBuffer> result = new HashMap<>();
+            final CircularFifoBuffer inputLines = new CircularFifoBuffer(1000);
+            final CircularFifoBuffer errLines = new CircularFifoBuffer(20);
+
+            /*
+            // spark-beeline cannot find this file in the way java invokes shell
             String sqlsFile = this.sqlsFilesPath + this.taskId;
             File tempFile = new File(sqlsFile);
             if (tempFile.exists()) {
@@ -615,24 +715,145 @@ public class TaskRunnableBackend {
 
             wf.close();
 
-            String scmd = String.format("sh %s %s", this.submitScript, sqlsFile);
-            Process proc = null;
+            */
+
+            String sqls = cmd;
+            if (!sqls.endsWith(";")) {
+                sqls.concat(";");
+            }
+            String scmd = String.format("/bin/sh %s %s", this.submitScript);
+
             try {
-                proc = Runtime.getRuntime().exec(scmd);
-                InputStream stdrr = proc.getInputStream();
-                InputStreamReader isr = new InputStreamReader(stdrr, "UTF-8");
-                BufferedReader br = new BufferedReader(isr);
-                String line = br.readLine();
-                while(line != null) {
-                    LOGGER.info(line);
-                    resultLines.add(line);
-                    line = br.readLine();
+                proc = Runtime.getRuntime().exec(scmd,
+                        new String[]{
+                                String.format("ENV_PATH=%s", envConfigPath),
+                                String.format("KEY_TAB_FILE=%s", userKeyTabFile),
+                                String.format("USER_PRINCIPAL=%s", userPrincipal),
+                                String.format("SQL_FILE=%s", sqls),
+                        });
+                final List<String> lastLine = new ArrayList<>(1);
+
+                normalReader = new Thread() {
+                    private BufferedReader br;
+                    @Override
+                    public void run() {
+                        try {
+                            br = new BufferedReader(
+                                    new InputStreamReader(proc.getInputStream(), "UTF-8"));
+                            String line;
+                            while ((line = br.readLine()) != null) {
+                                inputLines.add(line);
+                                lastLine.clear();
+                                lastLine.add(line);
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("normal Reader exception : " + e.getMessage());
+                        } finally {
+                            close();
+                        }
+                    }
+
+                    @Override
+                    public void interrupt() {
+                        close();
+                        super.interrupt();
+                    }
+
+                    private void close() {
+                        if (br != null) {
+                            try {
+                                br.close();
+                            } catch (IOException e) {
+                                LOGGER.error("normal Reader close err : " + e.getMessage());
+                            }
+                        }
+                    }
+
+                };
+
+                errReader = new Thread() {
+                    private BufferedReader br;
+                    @Override
+                    public void run() {
+                        try {
+                            br = new BufferedReader(
+                                    new InputStreamReader(proc.getErrorStream(), "UTF-8"));
+                            String line;
+                            while ((line = br.readLine()) != null) {
+                                errLines.add(line);
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("err Reader exception : " + e.getMessage());
+                        } finally {
+                            close();
+                        }
+                    }
+
+                    @Override
+                    public void interrupt() {
+                        close();
+                        super.interrupt();
+                    }
+
+                    private void close() {
+                        if (br != null) {
+                            try {
+                                br.close();
+                            } catch (IOException e) {
+                                LOGGER.error("normal Reader close err : " + e.getMessage());
+                            }
+                        }
+                    }
+
+                };
+
+                this.normalReader.start();
+                this.errReader.start();
+
+                int runStatus = proc.waitFor();
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    LOGGER.error("weird sth");
                 }
-                return resultLines;
+
+                LOGGER.info("End up with : " + lastLine.get(0));
+                if ("".equals(lastLine.get(0))) {
+                    result.put(DataTaskConstants.SPARKSQL_RESULT_FAIL, inputLines);
+                } else {
+                    result.put(lastLine.get(0), inputLines);
+                }
+
+                if (runStatus != 0) {
+                    result.put("1", errLines);
+                } else if ("".equals(lastLine)) {
+                    errLines.add("spark sql cmd interrupt");
+                    result.put("1", errLines);
+                }
+                LOGGER.info("runStatus : " + runStatus);
+                return result;
             } finally {
-                if (proc != null) {
-                    proc.destroy();
-                }
+                free();
+            }
+        }
+
+        @Override
+        public void free() {
+            if (proc != null) {
+                proc.destroy();
+                proc = null;
+                LOGGER.debug("spark sql beeline process destroyed");
+            }
+
+            if (normalReader != null && normalReader.isAlive()) {
+                normalReader.interrupt();
+                LOGGER.debug("spark sql beeline normalReader interrupt");
+            }
+
+            if (errReader != null && errReader.isAlive()) {
+                errReader.interrupt();
+                LOGGER.debug("spark sql beeline errReader interrupt");
             }
         }
     }

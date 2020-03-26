@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * ProxyAddWorkRecord.
  * Record and Log.
  */
-public class ProxyAddWorkRecord implements DefaultServiceChain.IProxyAddWork {
+public class ProxyAddWorkRecord implements DefaultServiceChain.IProxyAddWork<TaskChainContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyAddWorkRecord.class);
     private TaskRunnableBackend taskRunnableBackend;
 
@@ -21,7 +21,7 @@ public class ProxyAddWorkRecord implements DefaultServiceChain.IProxyAddWork {
     }
 
     @Override
-    public void doBefore(ChainContext arg) {
+    public void doBefore(TaskChainContext arg) {
         long startTime = System.currentTimeMillis();
         RecordBean recordBean = (RecordBean)arg.get("recordBean");
 
@@ -32,7 +32,7 @@ public class ProxyAddWorkRecord implements DefaultServiceChain.IProxyAddWork {
     }
 
     @Override
-    public void doAfter(ChainContext arg) {
+    public void doAfter(TaskChainContext arg) {
         long overTime = System.currentTimeMillis();
         RecordBean recordBean = (RecordBean)arg.get("recordBean");
         LOGGER.info(String.format("%s %s complete , elapse %s",
@@ -50,7 +50,7 @@ public class ProxyAddWorkRecord implements DefaultServiceChain.IProxyAddWork {
      * @param e
      */
     @Override
-    public void doException(ChainContext arg, Exception e) {
+    public void doException(TaskChainContext arg, Exception e) {
         long overTime = System.currentTimeMillis();
         RecordBean recordBean = (RecordBean)arg.get("recordBean");
         //enter here, the exception e only is InvocationException.
