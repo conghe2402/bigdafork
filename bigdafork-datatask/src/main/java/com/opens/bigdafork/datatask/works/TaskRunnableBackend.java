@@ -425,8 +425,8 @@ public class TaskRunnableBackend {
         }
 
         protected TaskResult executeDDLByEngineName(String engineName) throws Exception {
-            Connection hiveConnection = getHiveDDLConnection();
-            try(Statement statement = HiveOpUtils.getStatement(hiveConnection)) {
+            Connection useHiveConnection = getHiveDDLConnection();
+            try(Statement statement = HiveOpUtils.getStatement(useHiveConnection)) {
                 HiveOpUtils.executeStatement(statement,
                         String.format("set hive.execution.engine=%s", engineName));
                 HiveOpUtils.executeStatement(statement, this.getSql());
@@ -437,8 +437,8 @@ public class TaskRunnableBackend {
         }
 
         protected TaskResult executeDDLSetByEngineName(String engineName) throws Exception {
-            Connection hiveConnection = getHiveDDLConnection();
-            Statement statement = HiveOpUtils.getStatement(hiveConnection);
+            Connection useHiveConnection = getHiveDDLConnection();
+            Statement statement = HiveOpUtils.getStatement(useHiveConnection);
             HiveOpUtils.executeStatement(statement,
                     String.format("set hive.execution.engine=%s", engineName));
             ResultSet resultset = HiveOpUtils.executeStatementQry(statement, this.getSql());
