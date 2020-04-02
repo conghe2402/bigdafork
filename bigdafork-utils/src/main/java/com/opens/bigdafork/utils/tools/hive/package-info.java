@@ -1,5 +1,5 @@
 /**
- * In this package, we provider some hive utilities have features what are
+ * In this package, we provide some hive utilities have features what are
  * some hive management and basic operation features.
  *
  */
