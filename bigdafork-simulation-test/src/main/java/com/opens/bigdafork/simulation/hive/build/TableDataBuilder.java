@@ -95,8 +95,8 @@ public class TableDataBuilder {
             this.writeBuff();
             //this.write();
         } else {
-            LOGGER.info("MMC write mode!");
-            this.mmc();
+            //LOGGER.info("MMC write mode!");
+            this.write();
         }
         LOGGER.info(String.format("start to output data to file : %s", filePath));
 
@@ -149,6 +149,7 @@ public class TableDataBuilder {
             LOGGER.info("done with put into hdfs");
 
             File datFile = new File(filePath);
+            /*
             if (datFile.exists()) {
                 if (datFile.delete()) {
                     LOGGER.info(String.format("delete file Success ：%s", filePath));
@@ -156,6 +157,7 @@ public class TableDataBuilder {
                     LOGGER.info(String.format("delete file Fail ：%s", filePath));
                 }
             }
+            */
             return true;
         } catch (Exception e) {
             LOGGER.error("put into hdfs fail : " + e.getMessage());
@@ -270,6 +272,10 @@ public class TableDataBuilder {
 
     }
 
+    /**
+     * this method has a bug that generate file has many illegal data.
+     * @^@^@^
+     */
     private void mmc() {
         File bdf = new File(filePath);
         MappedByteBuffer mBuf = null;
