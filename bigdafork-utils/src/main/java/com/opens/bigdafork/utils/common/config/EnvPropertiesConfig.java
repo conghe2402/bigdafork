@@ -85,7 +85,7 @@ public final class EnvPropertiesConfig
         return this.getConfig(BigdataUtilsGlobalConstants.USERNAME_CLIENT_KERBEROS_KEYTAB_FILE);
     }
 
-    public String getSaveMode() {
+    public String getSafeMode() {
         return this.getConfig(BigdataUtilsGlobalConstants.SAFE_MODE);
     }
 
