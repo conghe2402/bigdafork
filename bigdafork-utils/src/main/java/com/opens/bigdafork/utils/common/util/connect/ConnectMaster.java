@@ -22,18 +22,18 @@ public final class ConnectMaster {
 
     public static List<IDo<Configuration, Configuration>> getConnStrategy(String req) {
         List<IDo<Configuration, Configuration>> connDoList = Lists.newArrayList();
-        String saveMode = EnvPropertiesConfig.getInstance().getSaveMode();
+        String safeMode = EnvPropertiesConfig.getInstance().getSafeMode();
         if (REQ_HBASE_CONN.equals(req)) {
             //1 configs
             connDoList.add(new HBaseConfDo());
 
-            if (IS_SAVE_MODE.equalsIgnoreCase(saveMode)) {
+            if (IS_SAVE_MODE.equalsIgnoreCase(safeMode)) {
                 //2 login
                 connDoList.add(new HadoopLoginDo());
             }
         } else if (REQ_HIVE_CONN.equals(req)) {
             connDoList.add(new HiveConfDo());
-            if (IS_SAVE_MODE.equalsIgnoreCase(saveMode)) {
+            if (IS_SAVE_MODE.equalsIgnoreCase(safeMode)) {
                 //2 login
                 connDoList.add(new HadoopLoginDo());
             }
