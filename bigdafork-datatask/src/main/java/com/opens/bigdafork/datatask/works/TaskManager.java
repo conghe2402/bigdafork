@@ -371,6 +371,10 @@ public final class TaskManager {
         submitTaskInfo.setSqlIndex(sqlIndex);
         C2Config configsOfSql = c2ItemsForTask.getCopy();
 
+        String appName = SingleContext.get().getTaskName();
+        appName = submitTaskInfo.getSqlIndex() + "-" + appName;
+        submitTaskInfo.setAppName(appName);
+
         if (this.c2ItemsForEachSQL.containsKey(sqlIndex)) {
             LOGGER.info(String.format("use c2 custom config for %s", sqlIndex));
             configsOfSql = this.c2ItemsForEachSQL.get(sqlIndex).getCopy();

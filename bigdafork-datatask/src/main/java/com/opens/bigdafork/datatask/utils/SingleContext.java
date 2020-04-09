@@ -49,6 +49,9 @@ public final class SingleContext {
     @Setter @Getter
     private String envConfigPath;
 
+    @Setter @Getter
+    private String taskName;
+
     public static SingleContext get() {
         return INSTANCE;
     }

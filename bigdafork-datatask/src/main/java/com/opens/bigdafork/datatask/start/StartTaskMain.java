@@ -72,6 +72,9 @@ public final class StartTaskMain {
         SingleContext.get().setRecordNotifyer(recordNotifyer);
         SingleContext.get().setC2CofigPath(c2Path);
         SingleContext.get().setNasRootPath(nasRootPath);
+        String taskName = getTaskName(jobBean.getClassName());
+        SingleContext.get().setTaskName(nasRootPath);
+
 
         //initialize work object and execute
         try {
@@ -128,7 +131,13 @@ public final class StartTaskMain {
         return jobBean;
     }
 
-
+    private static String getTaskName(String className) {
+        if (className.indexOf('.') > 0) {
+            return className.substring(className.lastIndexOf('.') + 1);
+        } else {
+            return className;
+        }
+    }
 
     private StartTaskMain(){}
 }

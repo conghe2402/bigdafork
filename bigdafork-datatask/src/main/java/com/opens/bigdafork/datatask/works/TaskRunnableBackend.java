@@ -71,7 +71,8 @@ public class TaskRunnableBackend {
         RecordLogBean recordLogBean = initRecordLogBean(submitTaskInfo);
 
         RTask runnableTask =
-                getRunnableTaskByInfo(submitTaskInfo.getUseEngine(),
+                getRunnableTaskByInfo(submitTaskInfo.getAppName(),
+                        submitTaskInfo.getUseEngine(),
                         submitTaskInfo.getTaskType(),
                         submitTaskInfo.getSql(),
                         submitTaskInfo.getConfigs());
@@ -109,7 +110,9 @@ public class TaskRunnableBackend {
                 ddl,
                 engine));
 
-        RTask runnableTask = getRunnableTaskByInfo(engine,
+        String appName = SingleContext.get().getTaskName();
+        appName = "ddl-" + appName;
+        RTask runnableTask = getRunnableTaskByInfo(appName, engine,
                 tt,
                 ddl, null);
         Object result = null;
@@ -283,22 +286,23 @@ public class TaskRunnableBackend {
         }
     }
 
-    public RTask getRunnableTaskByInfo(int engine,
+    public RTask getRunnableTaskByInfo(String appName, int engine,
                                        RTaskType type, String sql, List<String> configs) {
         RTask runnableTask;
         if (engine == DataTaskConstants.HIVE) {
             LOGGER.info("determine to use engine of Hive on MR");
-            runnableTask = new HiveOnMRTask(type, sql, configs);
+            runnableTask = new HiveOnMRTask(appName, type, sql, configs);
         } else if (engine == DataTaskConstants.HIVE_ON_SPARK) {
             LOGGER.info("determine to use engine of Hive on SPARK");
-            runnableTask = new HiveOnSparkTask(type, sql, configs);
+            runnableTask = new HiveOnSparkTask(appName, type, sql, configs);
         } else if (engine == DataTaskConstants.SPARK_SQL) {
             LOGGER.info("determine to use engine of SPARK SQL");
-            runnableTask = new SparkSQLTask(type, sql, configs, SingleContext.get().getTaskId());
+            runnableTask = new SparkSQLTask(appName, type, sql, configs,
+                    SingleContext.get().getTaskId());
         } else {
             //default is hive on MR
             LOGGER.warn("engine index is wrong or not set correctly, so we use MR engine by default");
-            runnableTask = new HiveOnMRTask(type, sql, configs);
+            runnableTask = new HiveOnMRTask(appName, type, sql, configs);
         }
         return runnableTask;
     }
@@ -370,16 +374,18 @@ public class TaskRunnableBackend {
         private String sql;
         private List<String> configs;
         private List<String> restoreConfigs;
+        private String appName;
 
-        public RTask(RTaskType type, String sql, List<String> configs) {
+        public RTask(String appName, RTaskType type, String sql, List<String> configs) {
             this.type = type;
             this.sql = sql;
             this.configs = configs;
+            this.appName = appName;
         }
 
-        public RTask(RTaskType type, String sql,
+        public RTask(String appName, RTaskType type, String sql,
                      List<String> configs, List<String> restoreConfigs) {
-            this(type, sql, configs);
+            this(appName, type, sql, configs);
             this.restoreConfigs = restoreConfigs;
         }
 
@@ -492,6 +498,18 @@ public class TaskRunnableBackend {
         }
 
         private void loadConfigs(Statement statement, String engineName) throws Exception {
+            if ("spark".equalsIgnoreCase(engineName)) {
+                HiveOpUtils.executeStatement(statement,
+                        String.format("set spark.app.name=%s", appName));
+            } else if ("hive".equalsIgnoreCase(engineName)) {
+                HiveOpUtils.executeStatement(statement,
+                        String.format("set mapreduce.job.name=%s", appName));
+            }
+
+            if (this.getConfigs() == null || this.getConfigs().size() <= 0) {
+                return;
+            }
+
             for (String item : this.getConfigs()) {
                 HiveOpUtils.executeStatement(statement, String.format("set %s", item));
                 LOGGER.info(String.format("set configs on %s : %s ", engineName, item));
@@ -511,8 +529,8 @@ public class TaskRunnableBackend {
      */
     private class HiveOnSparkTask extends RTask {
         private final String engineName = "spark";
-        public HiveOnSparkTask(RTaskType type, String sql, List<String> configs) {
-            super(type, sql, configs);
+        public HiveOnSparkTask(String appName, RTaskType type, String sql, List<String> configs) {
+            super(appName, type, sql, configs);
         }
 
         @Override
@@ -549,8 +567,8 @@ public class TaskRunnableBackend {
     private class HiveOnMRTask extends RTask {
         private final String engineName = "mr";
 
-        public HiveOnMRTask(RTaskType type, String sql, List<String> configs) {
-            super(type, sql, configs);
+        public HiveOnMRTask(String appName, RTaskType type, String sql, List<String> configs) {
+            super(appName, type, sql, configs);
         }
 
         @Override
@@ -595,9 +613,9 @@ public class TaskRunnableBackend {
         private Thread errReader;
         private Thread normalReader;
 
-        public SparkSQLTask(RTaskType type, String sql,
+        public SparkSQLTask(String appName, RTaskType type, String sql,
                             List<String> configs, String taskId) {
-            super(type, sql, configs);
+            super(appName, type, sql, configs);
             this.taskId = taskId;
             this.shellPath = System.getProperty("use.dir") + "/ssql/";
             this.submitScript = this.shellPath + "script/submit";
@@ -889,5 +907,6 @@ public class TaskRunnableBackend {
         private List<String> standByConfigs;
         private boolean isDDL; //1:yes;0:no
         private RTaskType taskType;
+        private String appName;
     }
 }

@@ -65,6 +65,7 @@ public abstract class TaskChainPart implements IChainPart<TaskChainContext, Task
         recordBean.setNeedStop(false);
 
         RTask nextRunnableTask = taskRunnableBackend.getRunnableTaskByInfo(
+                submitTaskInfo.getAppName(),
                 submitTaskInfo.getStandbyEngine(),
                 submitTaskInfo.getTaskType(),
                 submitTaskInfo.getSql(),
