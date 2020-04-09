@@ -72,9 +72,8 @@ public final class StartTaskMain {
         SingleContext.get().setRecordNotifyer(recordNotifyer);
         SingleContext.get().setC2CofigPath(c2Path);
         SingleContext.get().setNasRootPath(nasRootPath);
-        String taskName = getTaskName(jobBean.getClassName());
         SingleContext.get().setTaskName(nasRootPath);
-
+        SingleContext.get().setTaskName(getTaskName(jobBean.getClassName()));
 
         //initialize work object and execute
         try {
