@@ -3,6 +3,7 @@ package com.opens.bigdafork.utils.common.util.connect;
 import com.google.common.collect.Lists;
 import com.opens.bigdafork.common.base.IDo;
 import com.opens.bigdafork.utils.common.config.EnvPropertiesConfig;
+import com.opens.bigdafork.utils.common.constants.BigdataUtilsGlobalConstants;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.List;
@@ -16,7 +17,6 @@ public final class ConnectMaster {
     public static final String REQ_HBASE_CONN = "Hbase";
     public static final String REQ_REDIS_CONN = "Redis";
     public static final String REQ_HIVE_CONN = "hive";
-    public static final String IS_SAVE_MODE = "true";
 
     private ConnectMaster() {}
 
@@ -27,17 +27,20 @@ public final class ConnectMaster {
             //1 configs
             connDoList.add(new HBaseConfDo());
 
-            if (IS_SAVE_MODE.equalsIgnoreCase(safeMode)) {
+            if (BigdataUtilsGlobalConstants.IS_SAVE_MODE
+                    .equalsIgnoreCase(safeMode)) {
                 //2 login
                 connDoList.add(new HadoopLoginDo());
             }
         } else if (REQ_HIVE_CONN.equals(req)) {
             connDoList.add(new HiveConfDo());
-            if (IS_SAVE_MODE.equalsIgnoreCase(safeMode)) {
+            boolean isSafeMode = BigdataUtilsGlobalConstants.IS_SAVE_MODE
+                    .equalsIgnoreCase(safeMode);
+            if (isSafeMode) {
                 //2 login
                 connDoList.add(new HadoopLoginDo());
             }
-            connDoList.add(new HiveUrlDo());
+            connDoList.add(new HiveUrlDo(isSafeMode));
         }
         return connDoList;
     }

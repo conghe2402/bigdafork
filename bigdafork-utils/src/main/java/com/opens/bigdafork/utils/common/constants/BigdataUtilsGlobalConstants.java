@@ -61,13 +61,15 @@ public final class BigdataUtilsGlobalConstants {
                     "we need copy local_policy.jar and US_export_policy.jar " +
                     "from remote server in path /opt/.../jdk/jre/security/";
     public static final String LOGIN_FAILED_CAUSE_PRINCIPAL_WRONG =
-            "(no rule) principal format is not supported by default, " +
-                    "we need add property hadoop.security.auth_to_local " +
-                    "in core-site xml value RULE:[1:$1] RULE:[2:$1]";
+            "(oreno rule) principal format is not supported by default, \" +\n" +
+                    "                    \"we need add property hadoop.security.auth_to_local \" +\n" +
+                    "                    \"in c-site xml value RULE:[1:$1] RULE:[2:$1]";
     public static final String LOGIN_FAILED_CAUSE_TIME_OUT =
             "(time out) cannot connect to kdc server or there is a " +
                     "fire wall in the network";
 
     public static final String HIEV_JDBC_URL_KEY = "hiveJdbcUrl";
     public static final String HIVE_PRINCIPAL = "hive.client.kerberos.principal";
+
+    public static final String IS_SAVE_MODE = "true";
 }

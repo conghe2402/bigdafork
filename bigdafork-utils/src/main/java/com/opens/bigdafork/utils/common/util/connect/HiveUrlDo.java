@@ -14,20 +14,34 @@ import org.slf4j.LoggerFactory;
  */
 public class HiveUrlDo implements IDo<Configuration, Configuration> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HiveUrlDo.class);
-    private static final String HIVE_JDBC_URL = new StringBuilder("jdbc:hive2://%s/")
+    private static final String HIVE_JDBC_URL_SAFE = new StringBuilder("jdbc:hive2://%s/")
             .append(";serviceDiscoveryMode=zooKeeper")
             .append(";zooKeeperNamespace=hiveserver2")
             .append(";sasl.qop=auth-conf")
             .append(";auth=KERBEROS")
             .append(";principal=%s;").toString();
+    private static final String HIVE_JDBC_URL_NORMAL = new StringBuilder("jdbc:hive2://%s/")
+            .append(";serviceDiscoveryMode=zooKeeper")
+            .append(";zooKeeperNamespace=hiveserver2")
+            .append(";auth=none").toString();
+
+    private boolean isSafeMode = false;
+
+    public HiveUrlDo(boolean isSafeMode) {
+        this.isSafeMode = isSafeMode;
+    }
 
     @Override
     public Configuration iDo(Configuration configuration) {
         LOGGER.debug("Hive set url...");
         EnvPropertiesConfig env = EnvPropertiesConfig.getInstance();
-        String url = StringUtils.format(HIVE_JDBC_URL,
+
+        String url = isSafeMode ?
+                StringUtils.format(HIVE_JDBC_URL_SAFE,
                 env.getZookeeperQuorum(),
-                env.getHivePrincipal());
+                env.getHivePrincipal())
+                :
+                HIVE_JDBC_URL_NORMAL;
         configuration.set(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY,
                 url);
         return configuration;
