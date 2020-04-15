@@ -19,34 +19,31 @@ public final class HiveOpUtils {
             IllegalAccessException, ClassNotFoundException, SQLException {
         if (env.getBoolean(BigdataUtilsGlobalConstants.SAFE_MODE, false)) {
             //safe mode
-            return getConnectionSafeMode(env.get(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY));
+            return getConnection(env.get(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY), "");
         } else {
-            return getConnectionNoSafeMode();
+            return getConnection(env.get(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY),
+                    env.get(BigdataUtilsGlobalConstants.USERNAME_NORMAL_MODE));
         }
     }
 
     /**
-     * To get a connection to  hive server in safe mode.
+     * To get a connection to  hive server.
      * @param url
      * @return
      */
-    public static Connection getConnectionSafeMode(String url) throws InstantiationException,
+    public static Connection getConnection(String url, String userName) throws InstantiationException,
             IllegalAccessException, ClassNotFoundException, SQLException {
         Connection connection;
         try {
-            LOGGER.debug("conn url : " + url);
+            LOGGER.debug("conn url : " + url + " ; userName:" + userName);
             Class.forName("org.apache.hive.jdbc.HiveDriver").newInstance();
-            connection = DriverManager.getConnection(url, "", "");
+            connection = DriverManager.getConnection(url, userName, "");
         } catch (InstantiationException | IllegalAccessException
                 | ClassNotFoundException | SQLException e) {
             LOGGER.error("when get a connection, throws an exception : " + e.getMessage());
             throw (e);
         }
         return connection;
-    }
-
-    public static Connection getConnectionNoSafeMode() {
-        return null;
     }
 
     /**

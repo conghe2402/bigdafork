@@ -77,6 +77,10 @@ public final class EnvPropertiesConfig
         return this.getConfig(BigdataUtilsGlobalConstants.ZOOKEEPER_QUORUM);
     }
 
+    public String getUserNameNormalMode() {
+        return this.getConfig(BigdataUtilsGlobalConstants.USERNAME_NORMAL_MODE);
+    }
+
     public String getHivePrincipal() {
         return this.getConfig(BigdataUtilsGlobalConstants.HIVE_PRINCIPAL);
     }

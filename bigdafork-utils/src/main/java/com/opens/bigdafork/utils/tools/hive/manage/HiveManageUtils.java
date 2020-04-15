@@ -121,7 +121,7 @@ public class HiveManageUtils extends AbstractManageUtils {
         if(StringUtils.isBlank(url)) {
             throw new LoadConfigException("can not get hive url!");
         }
-        return HiveOpUtils.getConnectionSafeMode(url);
+        return HiveOpUtils.getConnection(this.getConfiguration());
     }
 
     private boolean checkKeyNameIsInvalid(String kName) {

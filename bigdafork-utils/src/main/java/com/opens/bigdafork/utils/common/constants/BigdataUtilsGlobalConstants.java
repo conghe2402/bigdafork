@@ -25,6 +25,10 @@ public final class BigdataUtilsGlobalConstants {
      */
     public static final String SAFE_MODE = "bigdafork.safe.mode";
     public static final String
+            USERNAME_NORMAL_MODE = "bigdafork.username.normal.mode";
+
+    // base
+    public static final String
             ZOOKEEPER_SERVER_PRINCIPAL = "zookeeper.server.principal";
 
     public static final String
