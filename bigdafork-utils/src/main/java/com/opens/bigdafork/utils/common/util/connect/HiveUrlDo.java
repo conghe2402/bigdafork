@@ -38,12 +38,18 @@ public class HiveUrlDo implements IDo<Configuration, Configuration> {
 
         String url = isSafeMode ?
                 StringUtils.format(HIVE_JDBC_URL_SAFE,
-                env.getZookeeperQuorum(),
-                env.getHivePrincipal())
+                        env.getZookeeperQuorum(),
+                        env.getHivePrincipal())
                 :
-                HIVE_JDBC_URL_NORMAL;
+                StringUtils.format(HIVE_JDBC_URL_NORMAL,
+                        env.getZookeeperQuorum());
         configuration.set(BigdataUtilsGlobalConstants.HIEV_JDBC_URL_KEY,
                 url);
+
+        if (!isSafeMode) {
+            configuration.set(BigdataUtilsGlobalConstants.USERNAME_NORMAL_MODE,
+                    env.getUserNameNormalMode());
+        }
         return configuration;
     }
 }
