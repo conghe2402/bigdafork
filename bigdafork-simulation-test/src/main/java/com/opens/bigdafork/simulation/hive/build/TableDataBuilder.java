@@ -50,6 +50,7 @@ public class TableDataBuilder {
     private NumberFormat numberFormat;
     //special field value generator.
     private Map<String, FieldValueGen> fvgMap = new HashMap<>();
+    private volatile boolean clearRunTag = false;
 
     public TableDataBuilder(Configuration env, String mTableName,
                             Map<String, HiveManageUtils.HiveField> fieldsMap,
@@ -143,6 +144,7 @@ public class TableDataBuilder {
         LOGGER.info(String.format("begin to put %s into hfds dir %s.", filePath, destDfsHomePath));
         String cmd = String.format("sh /root/workspace/bigdafork-simulation-test-1.0-SNAPSHOT/upload %s %s",
                 this.filePath, this.destDfsHomePath);
+
         try {
             ShellUtil.execCommand(cmd);
             this.destFilePath = this.destDfsHomePath + datFileName;
@@ -227,10 +229,11 @@ public class TableDataBuilder {
     private void write() {
         //int batchNum = (int)(this.rolNumber > 10000 ? 10000 : this.rolNumber);
         //int cacheSize = lineMaxLength * batchNum;
+        this.clearPC();
         FileWriter writer = null;
         try {
             writer = new FileWriter(this.filePath);
-            int i = 1;
+            long i = 1;
             while (i <= rolNumber) {
                 String line = genLine();
                 writer.write(line);
@@ -247,16 +250,39 @@ public class TableDataBuilder {
                     e.printStackTrace();
                 }
             }
+            this.clearRunTag = false;
         }
 
     }
 
+    private void clearPC() {
+        clearRunTag = true;
+        new Thread() {
+            @Override
+            public void run() {
+                while (clearRunTag) {
+                    try {
+                        Thread.sleep(300000);
+                        LOGGER.debug("clear pc!");
+                        String cmd = "sh " + System.getProperty("use.dir") + "/clear.sh";
+                        LOGGER.debug("cmd: " + cmd);
+                        ShellUtil.submitCmd(cmd, null);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        LOGGER.error("exception occurs when clear pc : " + e.getMessage());
+                    }
+                }
+            }
+        }.start();
+    }
+
     private void writeBuff() {
+        clearPC();
         int batchNum = (int)(this.rolNumber > 10000 ? 10000 : this.rolNumber);
         int cacheSize = lineMaxLength * batchNum;
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(this.filePath), "UTF-8"), cacheSize)) {
-            int i = 1;
+            long i = 1;
             while (i <= rolNumber) {
                 String line = genLine();
                 bw.append(line);
@@ -268,6 +294,8 @@ public class TableDataBuilder {
         } catch (IOException e) {
             LOGGER.error("when generating data file, err occurs : " + e.getMessage());
             e.printStackTrace();
+        } finally {
+            this.clearRunTag = false;
         }
 
     }
