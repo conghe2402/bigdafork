@@ -29,7 +29,7 @@ public final class EnvPropertiesConfig
     }
 
     @Override
-    protected EnvPropertiesConfigLoader newConfigProps() throws LoadConfigException {
+    protected EnvPropertiesConfigLoader newConfigsLoader() throws LoadConfigException {
         return new EnvPropertiesConfigLoader();
     }
 

@@ -22,7 +22,7 @@ public class EnvPropertiesConfigLoader extends AbstractPropertiesConfigLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(EnvPropertiesConfigLoader.class);
 
     public EnvPropertiesConfigLoader() throws LoadConfigException {
-        load();
+
     }
 
     /**
@@ -33,10 +33,11 @@ public class EnvPropertiesConfigLoader extends AbstractPropertiesConfigLoader {
      * @throws LoadConfigException
      */
     @Override
-    public void load() throws LoadConfigException {
+    public Properties load() throws LoadConfigException {
         if (this.isLoadSuccess()) {
-            return;
+            return this.getProperties();
         }
+
         LOGGER.debug("initialize cluster environment...");
 
         String contextPropertiesJson = System.getProperty(JVM_CONTEXT_PROPERTIES);
@@ -58,5 +59,7 @@ public class EnvPropertiesConfigLoader extends AbstractPropertiesConfigLoader {
         if (!this.isLoadSuccess()) {
             throw new LoadConfigException();
         }
+
+        return this.getProperties();
     }
 }
