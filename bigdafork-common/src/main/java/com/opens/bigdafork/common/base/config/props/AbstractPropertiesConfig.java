@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * This is a config load abstract utility.
@@ -17,7 +19,8 @@ public abstract class AbstractPropertiesConfig<C extends AbstractPropertiesConfi
         extends AbstractBasicObservable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPropertiesConfig.class);
 
-    private C configs = null;
+    private Properties props = null;
+    private C configsLoader = null;
     private boolean status = false;
 
     public AbstractPropertiesConfig() {
@@ -42,7 +45,7 @@ public abstract class AbstractPropertiesConfig<C extends AbstractPropertiesConfi
 
     public String getConfig(String keyName) {
         if (status) {
-            return this.configs.getProperty(keyName);
+            return this.getProperty(keyName);
         } else {
             return "";
         }
@@ -50,7 +53,7 @@ public abstract class AbstractPropertiesConfig<C extends AbstractPropertiesConfi
 
     public String getConfig(String keyName, String defaultValue) {
         if (status) {
-            return this.configs.getProperty(keyName, defaultValue);
+            return this.getProperty(keyName, defaultValue);
         } else {
             return defaultValue;
         }
@@ -62,7 +65,7 @@ public abstract class AbstractPropertiesConfig<C extends AbstractPropertiesConfi
 
     public List<String> getAllConfigList() {
         if (status) {
-            return this.configs.getAllConfigItemsAsList();
+            return this.getAllConfigItemsAsList();
         } else {
             return new ArrayList<>();
         }
@@ -71,7 +74,7 @@ public abstract class AbstractPropertiesConfig<C extends AbstractPropertiesConfi
     /**
      * Just create instance of config properties.
      */
-    protected abstract C newConfigProps() throws LoadConfigException;
+    protected abstract C newConfigsLoader() throws LoadConfigException;
 
     /**
      * To override this meth for extend your notify message.
@@ -85,7 +88,8 @@ public abstract class AbstractPropertiesConfig<C extends AbstractPropertiesConfi
         NotifyEvent event = new NotifyEvent();
         Object payload;
         try {
-            configs = newConfigProps();
+            configsLoader = newConfigsLoader();
+            this.props = configsLoader.load();
             status = true;
             event.setStatus(status);
             event.setMsg("ok");
@@ -101,6 +105,24 @@ public abstract class AbstractPropertiesConfig<C extends AbstractPropertiesConfi
         notify(event);
     }
 
+    private String getProperty(String keyName) {
+        return this.getProperty(keyName, "");
+    }
 
+    private String getProperty(String keyName, String defaultValue) {
+        return this.props.getProperty(keyName, defaultValue);
+    }
 
+    private List<String> getAllConfigItemsAsList() {
+        List<String> items = new ArrayList<>();
+        for (Map.Entry item : props.entrySet()) {
+            String key = (String)item.getKey();
+            String value = (String)item.getValue();
+            // TODO: 2020/2/13 value include "
+            StringBuilder itemBuilder = new StringBuilder(key);
+            itemBuilder.append("=").append(value);
+            items.add(itemBuilder.toString());
+        }
+        return items;
+    }
 }

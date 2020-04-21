@@ -1,15 +1,13 @@
 package com.opens.bigdafork.common.base.config.props;
 
 import com.opens.bigdafork.common.base.exception.LoadConfigException;
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.Charsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -17,6 +15,8 @@ import java.util.Properties;
  */
 public abstract class AbstractPropertiesConfigLoader implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPropertiesConfigLoader.class);
+
+    @Getter
     private Properties properties = new Properties();
 
     @Setter
@@ -26,7 +26,7 @@ public abstract class AbstractPropertiesConfigLoader implements Serializable {
      * custom load logic by yourself.
      * @throws LoadConfigException
      */
-    public abstract void load() throws LoadConfigException;
+    public abstract Properties load() throws LoadConfigException;
 
     /**
      * Try to load properties specified by user, return false when it fails.
@@ -50,29 +50,8 @@ public abstract class AbstractPropertiesConfigLoader implements Serializable {
         return isSuccess;
     }
 
-    public String getProperty(String keyName) {
-        return this.getProperty(keyName, "");
-    }
-
-    public String getProperty(String keyName, String defaultValue) {
-        return this.properties.getProperty(keyName, defaultValue);
-    }
-
     public boolean isLoadSuccess() {
         return this.loadSuccess;
-    }
-
-    public List<String> getAllConfigItemsAsList() {
-        List<String> items = new ArrayList<>();
-        for (Map.Entry item : properties.entrySet()) {
-            String key = (String)item.getKey();
-            String value = (String)item.getValue();
-            // TODO: 2020/2/13 value include "
-            StringBuilder itemBuilder = new StringBuilder(key);
-            itemBuilder.append("=").append(value);
-            items.add(itemBuilder.toString());
-        }
-        return items;
     }
 
     /**
