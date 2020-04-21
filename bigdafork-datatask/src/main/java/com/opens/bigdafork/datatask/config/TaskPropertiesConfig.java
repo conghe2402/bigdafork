@@ -29,10 +29,8 @@ public class TaskPropertiesConfig
     }
 
     @Override
-    protected TaskPropertiesConfigLoader newConfigProps() throws LoadConfigException {
-        TaskPropertiesConfigLoader configLoader = new TaskPropertiesConfigLoader(fileName);
-        configLoader.load();
-        return configLoader;
+    protected TaskPropertiesConfigLoader newConfigsLoader() throws LoadConfigException {
+        return new TaskPropertiesConfigLoader(fileName);
     }
 
     @Override

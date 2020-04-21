@@ -5,6 +5,8 @@ import com.opens.bigdafork.common.base.exception.LoadConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Properties;
+
 /**
  * initialize context environment of application.
  */
@@ -21,7 +23,7 @@ public class TaskPropertiesConfigLoader extends AbstractPropertiesConfigLoader {
      * @throws LoadConfigException
      */
     @Override
-    public void load() throws LoadConfigException {
+    public Properties load() throws LoadConfigException {
         if (!this.isLoadSuccess()) {
             setLoadSuccess(loadConfigFromClasspathRoot(fileName));
         }
@@ -35,5 +37,7 @@ public class TaskPropertiesConfigLoader extends AbstractPropertiesConfigLoader {
         }
 
         LOGGER.debug(String.format("%s load success", fileName));
+
+        return this.getProperties();
     }
 }
