@@ -5,6 +5,7 @@ import com.opens.bigdafork.simulation.common.Constants;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,8 +79,8 @@ public class Initializer {
             return;
         }
 
-        if (cmds.length < 4) {
-            LOGGER.info("config number less than 4 , ignore table : " + tableName);
+        if (cmds.length < 5) {
+            LOGGER.info("config number less than 5 , ignore table : " + tableName);
             return;
         }
 
@@ -91,10 +92,12 @@ public class Initializer {
         String mkColName = cmds[index++];
         String mkComments = cmds[index++];
 
+        String tableStoreFormat = cmds[index++];
+
         //fieldName , item value
         LinkedHashMap<String, String> fom = new LinkedHashMap();
 
-        if (cmds.length > 5) {
+        if (cmds.length > 6) {
             for (int i = index + 1; i < cmds.length; i+=2) {
                 fom.put(cmds[i - 1], cmds[i]);
             }
@@ -115,7 +118,7 @@ public class Initializer {
         try (Connection connection = HiveOpUtils.getConnection(this.env)) {
             HiveOpUtils.dropTable(connection, String.format("%s%s",
                     Constants.SIMULATE_PREFIX, tableName));
-            HiveOpUtils.execDDL(connection, getCreateTableSQL(tableName));
+            HiveOpUtils.execDDL(connection, getCreateTableSQL(tableName, tableStoreFormat));
             HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
                     mkColName, mkComments));
             //create txt temp table
@@ -172,9 +175,13 @@ public class Initializer {
         return sql;
     }
 
-    private String getCreateTableSQL(String tableName) {
+    private String getCreateTableSQL(String tableName, String storeFormat) {
         String sql = String.format("create table if not exists %s%s like %s",
                 Constants.SIMULATE_PREFIX, tableName, tableName);
+        if (StringUtils.isNotBlank(storeFormat)) {
+            sql = String.format("create table if not exists %s%s like %s stored as %s",
+                    Constants.SIMULATE_PREFIX, tableName, tableName, storeFormat);
+        }
         LOGGER.debug(sql);
         return sql;
     }
