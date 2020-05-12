@@ -10,8 +10,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.misc.Cleaner;
-import sun.nio.ch.DirectBuffer;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -389,15 +387,4 @@ public class TableDataBuilder {
         return false;
     }
 
-    private void unmap(MappedByteBuffer var0) {
-        if (var0 == null) {
-            return;
-        }
-        Cleaner var1 = ((DirectBuffer)var0).cleaner();
-        if (var1 != null) {
-            LOGGER.info("clean...");
-            var1.clean();
-            System.gc();
-        }
-    }
 }
