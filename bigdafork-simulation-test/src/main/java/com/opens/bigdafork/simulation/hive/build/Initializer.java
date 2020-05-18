@@ -70,7 +70,7 @@ public class Initializer {
 
     private void initialTable(String tableCmd) throws InstantiationException,
             IllegalAccessException, ClassNotFoundException, SQLException {
-        String[] cmds = tableCmd.split(",");
+        String[] cmds = tableCmd.split(",", -1);
         int index = 0;
         String tableName = cmds[index++];
         LOGGER.info("try to initial : " + tableName);
