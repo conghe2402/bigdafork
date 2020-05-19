@@ -118,7 +118,7 @@ public class Initializer {
         try (Connection connection = HiveOpUtils.getConnection(this.env)) {
             HiveOpUtils.dropTable(connection, String.format("%s%s",
                     Constants.SIMULATE_PREFIX, tableName));
-            HiveOpUtils.execDDL(connection, getCreateTableSQL(tableName, tableStoreFormat));
+            HiveOpUtils.execDDL(connection, getCreateTableSQL(connection, tableName, tableStoreFormat));
             HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
                     mkColName, mkComments));
             //create txt temp table
@@ -175,15 +175,70 @@ public class Initializer {
         return sql;
     }
 
-    private String getCreateTableSQL(String tableName, String storeFormat) {
+    private String getCreateTableSQL(Connection connect, String tableName, String storeFormat) {
         String sql = String.format("create table if not exists %s%s like %s",
                 Constants.SIMULATE_PREFIX, tableName, tableName);
         if (StringUtils.isNotBlank(storeFormat)) {
-            sql = String.format("create table if not exists %s%s like %s stored as %s",
-                    Constants.SIMULATE_PREFIX, tableName, tableName, storeFormat);
+            sql = makeCreateTableSQL(connect, tableName, storeFormat);
         }
         LOGGER.debug(sql);
         return sql;
+    }
+
+    private String makeCreateTableSQL(Connection connect, String tableName, String storeFormat) {
+        StringBuilder createTableSQL = new StringBuilder();
+        createTableSQL.append("create table ").append(String.format("%s%s",
+                Constants.SIMULATE_PREFIX, tableName)).append(" (");
+
+        try(ResultSet rs = connect.createStatement()
+                .executeQuery(String.format("desc formatted %s", tableName))) {
+            boolean hasCol = false;
+            int colNum = 0;
+            boolean hasPart = false;
+            int lineNum = 0;
+            while(rs.next()) {
+                if (!hasPart && rs.getString(1).startsWith("# col_name")) {
+                    hasCol = true;
+                }
+                if (hasCol) {
+                    colNum++;
+                }
+                if (colNum >= 3 && !rs.getString(1).trim().equals("")) {
+                    createTableSQL.append(rs.getString(1)).append(" ")
+                            .append(rs.getString(2)).append(",");
+                }
+                if (colNum >=3 && hasCol && rs.getString(1).trim().equals("")) {
+                    createTableSQL.deleteCharAt(createTableSQL.lastIndexOf(","));
+                    createTableSQL.append(")");
+                    colNum = 0;
+                    hasCol = false;
+                }
+
+                if (rs.getString(1).startsWith("# Partition")) {
+                    hasPart = true;
+                    createTableSQL.append(" partitioned by (");
+                }
+
+                if (hasPart) {
+                    lineNum++;
+                }
+                if (lineNum >= 4 && hasPart && !rs.getString(1).trim().equals("")) {
+                    createTableSQL.append(rs.getString(1))
+                            .append(" ").append(rs.getString(2))
+                            .append(",");
+                }
+                if (lineNum >= 4 && hasPart && rs.getString(1).trim().equals("")) {
+                    createTableSQL.deleteCharAt(createTableSQL.lastIndexOf(","));
+                    createTableSQL.append(")");
+                    break;
+                }
+            }
+            createTableSQL.append(" stored as ").append(storeFormat);
+        } catch (SQLException e) {
+            LOGGER.error(e.getMessage());
+        }
+
+        return createTableSQL.toString();
     }
 
     /**
