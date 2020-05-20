@@ -3,6 +3,7 @@ package com.opens.bigdafork.simulation.hive.build;
 import com.google.common.collect.Lists;
 import com.opens.bigdafork.simulation.common.Constants;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
+import jodd.util.StringUtil;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
@@ -70,6 +71,7 @@ public class Initializer {
 
     private void initialTable(String tableCmd) throws InstantiationException,
             IllegalAccessException, ClassNotFoundException, SQLException {
+        Map<String, String> fieldTypeMap = new HashMap<>();
         String[] cmds = tableCmd.split(",", -1);
         int index = 0;
         String tableName = cmds[index++];
@@ -118,9 +120,10 @@ public class Initializer {
         try (Connection connection = HiveOpUtils.getConnection(this.env)) {
             HiveOpUtils.dropTable(connection, String.format("%s%s",
                     Constants.SIMULATE_PREFIX, tableName));
-            HiveOpUtils.execDDL(connection, getCreateTableSQL(connection, tableName, tableStoreFormat));
+            HiveOpUtils.execDDL(connection, getCreateTableSQL(connection, tableName,
+                    tableStoreFormat, fieldTypeMap));
             HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
-                    mkColName, mkComments));
+                    mkColName, fieldTypeMap.get(mkColName), mkComments));
             //create txt temp table
             HiveOpUtils.dropTable(connection, String.format("%s%s%s",
                     Constants.SIMULATE_PREFIX, tableName, Constants.TEMP_TABLE_SUFFIX));
@@ -131,7 +134,7 @@ public class Initializer {
 
             for (Map.Entry<String, String> item : fom.entrySet()) {
                 HiveOpUtils.execDDL(connection, getCommentSQL(tableName,
-                        item.getKey(), item.getValue()));
+                        item.getKey(), fieldTypeMap.get(item.getKey()), item.getValue()));
             }
         }
         LOGGER.info("done with initial : " + tableName);
@@ -161,7 +164,7 @@ public class Initializer {
             if (parts.trim().startsWith("ROW FORMAT ")) {
                 break;
             }
-            createSQL.append(parts);
+            createSQL.append(parts).append(" ");
         }
         createSQL.append(" row format delimited fields terminated by ',' lines terminated by '\\n' stored as textfile");
         LOGGER.debug(createSQL.toString());
@@ -175,17 +178,20 @@ public class Initializer {
         return sql;
     }
 
-    private String getCreateTableSQL(Connection connect, String tableName, String storeFormat) {
-        String sql = String.format("create table if not exists %s%s like %s",
-                Constants.SIMULATE_PREFIX, tableName, tableName);
-        if (StringUtils.isNotBlank(storeFormat)) {
-            sql = makeCreateTableSQL(connect, tableName, storeFormat);
+    private String getCreateTableSQL(Connection connect, String tableName, String storeFormat,
+                                     Map<String, String> fieldTypeMap) {
+        //String sql = String.format("create table if not exists %s%s like %s",
+        //        Constants.SIMULATE_PREFIX, tableName, tableName);
+        if (StringUtils.isBlank(storeFormat)) {
+            storeFormat = "textfile";
         }
+        String sql = makeCreateTableSQL(connect, tableName, storeFormat, fieldTypeMap);
         LOGGER.debug(sql);
         return sql;
     }
 
-    private String makeCreateTableSQL(Connection connect, String tableName, String storeFormat) {
+    private String makeCreateTableSQL(Connection connect, String tableName, String storeFormat,
+                                      Map<String, String> fieldTypeMap) {
         StringBuilder createTableSQL = new StringBuilder();
         createTableSQL.append("create table ").append(String.format("%s%s",
                 Constants.SIMULATE_PREFIX, tableName)).append(" (");
@@ -204,6 +210,7 @@ public class Initializer {
                     colNum++;
                 }
                 if (colNum >= 3 && !rs.getString(1).trim().equals("")) {
+                    fieldTypeMap.put(rs.getString(1), rs.getString(2));
                     createTableSQL.append(rs.getString(1)).append(" ")
                             .append(rs.getString(2)).append(",");
                 }
@@ -248,10 +255,17 @@ public class Initializer {
      * @param comments
      * @return
      */
-    private String getCommentSQL(String tableName, String colName,
+    private String getCommentSQL(String tableName, String colName, String typeName,
                                    String comments) {
-        String sql = String.format("alter table %s%s change column %s %s string comment '%s'",
-                Constants.SIMULATE_PREFIX, tableName, colName, colName, comments);
+        String sql;
+        if (StringUtil.isBlank(typeName)) {
+            sql = String.format("alter table %s%s change column %s %s string comment '%s'",
+                    Constants.SIMULATE_PREFIX, tableName, colName, colName, comments);
+        } else {
+            sql = String.format("alter table %s%s change column %s %s %s comment '%s'",
+                    Constants.SIMULATE_PREFIX, tableName, colName, colName, typeName, comments);
+        }
+
         LOGGER.debug(sql);
         return sql;
     }
