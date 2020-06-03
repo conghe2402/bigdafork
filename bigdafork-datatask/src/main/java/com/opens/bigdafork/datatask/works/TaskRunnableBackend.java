@@ -845,7 +845,7 @@ public class TaskRunnableBackend {
 
                 if (runStatus != 0) {
                     result.put("1", errLines);
-                } else if ("".equals(lastLine)) {
+                } else if ("".equals(lastLine.get(0))) {
                     errLines.add("spark sql cmd interrupt");
                     result.put("1", errLines);
                 }
