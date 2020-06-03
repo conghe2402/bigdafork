@@ -159,7 +159,7 @@ public final class TaskManager {
                 //key: sql1 ; value ： items
                 c2ItemsForEachSQL = yamlReader.getAllParamsMap(DataTaskConstants.FIELD_TASK);
             } catch (Exception e) {
-                LOGGER.error(String.format("self-defined c2 config is invalid. \n %s", c2ConfigPath));
+                LOGGER.error(String.format("self defined c2 config is invalid. \n %s", c2ConfigPath));
             }
         }
     }
