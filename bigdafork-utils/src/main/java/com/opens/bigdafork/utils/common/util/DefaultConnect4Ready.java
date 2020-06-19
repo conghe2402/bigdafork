@@ -17,6 +17,10 @@ public final class DefaultConnect4Ready {
 
     }
 
+    public static Configuration ready4Yarn(Configuration configuration) {
+        return ready(ConnectMaster.REQ_YARN_CONN, configuration);
+    }
+
     public static Configuration ready4Hbase(Configuration configuration) {
         return ready(ConnectMaster.REQ_HBASE_CONN, configuration);
     }

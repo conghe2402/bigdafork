@@ -17,30 +17,29 @@ public final class ConnectMaster {
     public static final String REQ_HBASE_CONN = "Hbase";
     public static final String REQ_REDIS_CONN = "Redis";
     public static final String REQ_HIVE_CONN = "hive";
+    public static final String REQ_YARN_CONN = "yarn";
 
     private ConnectMaster() {}
 
     public static List<IDo<Configuration, Configuration>> getConnStrategy(String req) {
         List<IDo<Configuration, Configuration>> connDoList = Lists.newArrayList();
         String safeMode = EnvPropertiesConfig.getInstance().getSafeMode();
+        boolean isSafeMode = BigdataUtilsGlobalConstants.IS_SAVE_MODE
+                .equalsIgnoreCase(safeMode);
+
         if (REQ_HBASE_CONN.equals(req)) {
             //1 configs
             connDoList.add(new HBaseConfDo());
-
-            if (BigdataUtilsGlobalConstants.IS_SAVE_MODE
-                    .equalsIgnoreCase(safeMode)) {
-                //2 login
-                connDoList.add(new HadoopLoginDo());
-            }
         } else if (REQ_HIVE_CONN.equals(req)) {
             connDoList.add(new HiveConfDo());
-            boolean isSafeMode = BigdataUtilsGlobalConstants.IS_SAVE_MODE
-                    .equalsIgnoreCase(safeMode);
-            if (isSafeMode) {
-                //2 login
-                connDoList.add(new HadoopLoginDo());
-            }
             connDoList.add(new HiveUrlDo(isSafeMode));
+        } else if (REQ_YARN_CONN.equals(req)) {
+            connDoList.add(new YarnConf());
+        }
+
+        if (isSafeMode) {
+            //2 login
+            connDoList.add(new HadoopLoginDo());
         }
         return connDoList;
     }

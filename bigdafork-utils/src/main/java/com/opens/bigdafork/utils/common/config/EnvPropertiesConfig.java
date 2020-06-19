@@ -53,6 +53,10 @@ public final class EnvPropertiesConfig
         return this.getConfig(BigdataUtilsGlobalConstants.HBASE_SITE_XML);
     }
 
+    public String getYarnSiteXml() {
+        return this.getConfig(BigdataUtilsGlobalConstants.YARN_SITE_XML);
+    }
+
     public String getHDFSSiteXml() {
         return this.getConfig(BigdataUtilsGlobalConstants.HDFS_SITE_XML);
     }

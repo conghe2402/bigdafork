@@ -37,6 +37,7 @@ public final class BigdataUtilsGlobalConstants {
     public static final String HDFS_SITE_XML = "hdfs.site.xml";
     public static final String CORE_SITE_XML = "core.site.xml";
     public static final String HBASE_SITE_XML = "hbase.site.xml";
+    public static final String YARN_SITE_XML = "yarn.site.xml";
     public static final String ZOOKEEPER_QUORUM = "zookeeper.quorum";
     public static final String ZOOKEEPER_PORT = "zookeeper.port";
     public static final String REDIS_HOST_LIST = "redis.host.list";
