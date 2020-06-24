@@ -35,9 +35,10 @@ public final class ConnectMaster {
             connDoList.add(new HiveUrlDo(isSafeMode));
         } else if (REQ_YARN_CONN.equals(req)) {
             connDoList.add(new YarnConf());
+            connDoList.add(new HadoopLoginDo());
         }
 
-        if (isSafeMode) {
+        if (isSafeMode && !REQ_YARN_CONN.equals(req)) {
             //2 login
             connDoList.add(new HadoopLoginDo());
         }
