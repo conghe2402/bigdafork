@@ -2,6 +2,8 @@ package com.opens.bigdafork.common.base.chain.simple.impl;
 
 import com.opens.bigdafork.common.base.chain.simple.IChainPart;
 import com.opens.bigdafork.common.base.chain.simple.IServiceChain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -13,22 +15,27 @@ import java.util.List;
  * DefaultServiceChain.
  * 1.support proxy logic of every part .
  * 2.support extensibility for chain part logic.
+ * 3.support workflow control in case of error.
  */
 public class DefaultServiceChain<C extends ChainContext>
         implements IServiceChain<C, C, C, Object> {
 
+    private static final Logger CHAIN_LOGGER = LoggerFactory.getLogger(DefaultServiceChain.class);
     private List<IChainPart<C, C>> chainHub = new ArrayList<>();
 
     private ProxyFactory proxyFactory = new ProxyFactory();
     private IProxyAddWork<C> proxyAddWork;
+    private List<IErrorResovler> errorRelsList;
     private C context;
 
     public DefaultServiceChain() {
 
     }
 
-    public DefaultServiceChain(IProxyAddWork<C> proxyAddWork) {
+    public DefaultServiceChain(IProxyAddWork<C> proxyAddWork,
+                               List<IErrorResovler> errorRelsList) {
         this.proxyAddWork = proxyAddWork;
+        this.errorRelsList = errorRelsList;
     }
 
     @Override
@@ -42,7 +49,7 @@ public class DefaultServiceChain<C extends ChainContext>
         if (proxyAddWork == null) {
             chainHub.add(part);
         } else {
-            chainHub.add(proxyFactory.makePoxPart(part, proxyAddWork));
+            chainHub.add(proxyFactory.makePoxPart(part, proxyAddWork, errorRelsList));
         }
         return this;
     }
@@ -56,6 +63,10 @@ public class DefaultServiceChain<C extends ChainContext>
         C rc = context;
         for (IChainPart<C, C> chainPart : chainHub) {
             rc = chainPart.iDo(rc);
+            if (rc.isExitSys()) {
+                CHAIN_LOGGER.warn("chain operate failure , then program will shutdown.");
+                System.exit(-1);
+            }
             if (rc.getStop()) {
                 break;
             }
@@ -69,8 +80,9 @@ public class DefaultServiceChain<C extends ChainContext>
     private class ProxyFactory {
         @SuppressWarnings({"rawtypes", "unchecked"})
         public IChainPart<C, C> makePoxPart(IChainPart<C, C> chainPartParam,
-                                          IProxyAddWork proxyAddWorkParam) {
-            ProxyChainPart proxyChainPart = new ProxyChainPart(chainPartParam, proxyAddWorkParam);
+                                          IProxyAddWork proxyAddWorkParam,
+                                            List<IErrorResovler> errorReslsParam) {
+            ProxyChainPart proxyChainPart = new ProxyChainPart(chainPartParam, proxyAddWorkParam, errorReslsParam);
             ClassLoader loader = chainPartParam.getClass().getClassLoader();
             Class[] interfaces = chainPartParam.getClass().getSuperclass().getInterfaces();
             return (IChainPart<C, C>)Proxy.newProxyInstance(loader, interfaces, proxyChainPart);
@@ -85,10 +97,14 @@ public class DefaultServiceChain<C extends ChainContext>
 
         private IProxyAddWork<C> proxyAddWork;
 
+        private List<IErrorResovler> errorResls;
+
         public ProxyChainPart(IChainPart<C, C> chainPart,
-                              IProxyAddWork<C> proxyAddWork) {
+                              IProxyAddWork<C> proxyAddWork,
+                              List<IErrorResovler> errorResls) {
             this.chainPart = chainPart;
             this.proxyAddWork = proxyAddWork;
+            this.errorResls = errorResls;
         }
 
         @Override
@@ -106,6 +122,15 @@ public class DefaultServiceChain<C extends ChainContext>
                 } catch (Exception e) {
                     this.proxyAddWork.doException(cc, e);
                     returnValue = args[0];
+
+                    //By accident spark client will be lost in 5min in case of lack of resources in the cluster
+                    if (errorResls != null && errorResls.size() > 0) {
+                        for (IErrorResovler resovler : errorResls) {
+                            if (resovler.meet(e) && resovler.getResovle() == 1) {
+                                returnValue = this.invoke(proxy, method, args);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -122,5 +147,16 @@ public class DefaultServiceChain<C extends ChainContext>
         void doAfter(C arg);
 
         void doException(C arg, Exception e);
+    }
+
+    /**
+     * How to control the work flow when exception encounter.
+     */
+    public interface IErrorResovler {
+        boolean meet(Exception e);
+
+        void setResolve(int res);
+
+        int getResovle();
     }
 }

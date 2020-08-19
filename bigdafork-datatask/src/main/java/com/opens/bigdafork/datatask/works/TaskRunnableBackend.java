@@ -11,6 +11,7 @@ import com.opens.bigdafork.datatask.utils.SingleContext;
 import com.opens.bigdafork.datatask.works.arrange.*;
 import com.opens.bigdafork.utils.tools.hive.manage.HiveManageUtils;
 import com.opens.bigdafork.utils.tools.hive.op.HiveOpUtils;
+import com.opens.bigdafork.utils.tools.yarn.YarnManagerUtils;
 import lombok.Data;
 import org.apache.commons.collections.buffer.CircularFifoBuffer;
 import org.apache.hadoop.conf.Configuration;
@@ -47,6 +48,8 @@ public class TaskRunnableBackend {
     private String userPrincipal = SingleContext.get().getUserPrincipal();
     private String envConfigPath = SingleContext.get().getEnvConfigPath();
 
+    private YarnManagerUtils yarnManagerUtils = new YarnManagerUtils();
+
     public TaskRunnableBackend() {
         notifyer = SingleContext.get().getRecordNotifyer();
         hiveManageUtils = new HiveManageUtils();
@@ -56,6 +59,10 @@ public class TaskRunnableBackend {
 
     public RecordNotifyer getNotifyer() {
         return notifyer;
+    }
+
+    public YarnManagerUtils getYarnManagerUtils() {
+        return this.yarnManagerUtils;
     }
 
     public Object runTask(SubmitTaskInfo submitTaskInfo) throws TaskFailException {
@@ -77,7 +84,8 @@ public class TaskRunnableBackend {
                         submitTaskInfo.getSql(),
                         submitTaskInfo.getConfigs());
 
-        serviceChain = new DefaultServiceChain(new ProxyAddWorkRecord(this));
+        serviceChain = new DefaultServiceChain(new ProxyAddWorkRecord(this),
+                null);
         TaskChainContext chainContext = new TaskChainContext();
 
         if (submitTaskInfo.getToleranceType() == 0) {
@@ -370,22 +378,24 @@ public class TaskRunnableBackend {
      * Keep the single connection alive in the ddl scenario.
      */
     public abstract class RTask implements Callable<TaskResult> {
+        private String taskName;
         private RTaskType type;
         private String sql;
         private List<String> configs;
         private List<String> restoreConfigs;
-        private String appName;
+        private boolean lackWarn = false;
+        private String queueName = "default";
 
-        public RTask(String appName, RTaskType type, String sql, List<String> configs) {
+        public RTask(String taskName, RTaskType type, String sql, List<String> configs) {
             this.type = type;
             this.sql = sql;
             this.configs = configs;
-            this.appName = appName;
+            this.taskName = taskName;
         }
 
-        public RTask(String appName, RTaskType type, String sql,
+        public RTask(String taskName, RTaskType type, String sql,
                      List<String> configs, List<String> restoreConfigs) {
-            this(appName, type, sql, configs);
+            this(taskName, type, sql, configs);
             this.restoreConfigs = restoreConfigs;
         }
 
@@ -401,12 +411,18 @@ public class TaskRunnableBackend {
 
         @Override
         public TaskResult call() throws Exception {
-            TaskResult result;
             if (type == RTaskType.ddl) {
-                result = executeDDL();
+                return executeDDL();
             } else if (type == RTaskType.ddlset) {
-                result = executeDDLSet();
-            } else if (type == RTaskType.sql) {
+                return executeDDLSet();
+            }
+
+            TaskResult result;
+            String queueName = getQueueName();
+            if (this instanceof HiveOnSparkTask) {
+
+            }
+            if (type == RTaskType.sql) {
                 result = executeSQL();
             } else if (type == RTaskType.set) {
                 result = executeQryRs();
@@ -500,10 +516,10 @@ public class TaskRunnableBackend {
         private void loadConfigs(Statement statement, String engineName) throws Exception {
             if ("spark".equalsIgnoreCase(engineName)) {
                 HiveOpUtils.executeStatement(statement,
-                        String.format("set spark.app.name=%s", appName));
+                        String.format("set spark.app.name=%s", taskName));
             } else if ("hive".equalsIgnoreCase(engineName)) {
                 HiveOpUtils.executeStatement(statement,
-                        String.format("set mapreduce.job.name=%s", appName));
+                        String.format("set mapreduce.job.name=%s", taskName));
             }
 
             if (this.getConfigs() == null || this.getConfigs().size() <= 0) {
@@ -514,6 +530,37 @@ public class TaskRunnableBackend {
                 HiveOpUtils.executeStatement(statement, String.format("set %s", item));
                 LOGGER.info(String.format("set configs on %s : %s ", engineName, item));
             }
+        }
+
+        private String getQueueName() {
+            String queueConfigItem = null;
+            if (this instanceof HiveOnMRTask) {
+                queueConfigItem = "mapreduce.job.queuename";
+            } else if (this instanceof HiveOnSparkTask) {
+                queueConfigItem = "spark.yarn.queue";
+            }
+
+            String queueConfigName = findQueueNameFromConfigs(queueConfigItem);
+            if (queueConfigName == null) {
+                queueConfigName = this.queueName;
+            }
+            return queueConfigName;
+        }
+
+        private String findQueueNameFromConfigs(String keyName) {
+            for (String config : this.configs) {
+                if (config == null) {
+                    continue;
+                }
+
+                String[] configPair = config.split("=");
+                if (configPair[0].trim().equalsIgnoreCase(keyName)) {
+                    String tmpQueueName = configPair[1].trim();
+                    LOGGER.info("find config queue name, the name is " + tmpQueueName);
+                    return tmpQueueName;
+                }
+            }
+            return null;
         }
     }
 

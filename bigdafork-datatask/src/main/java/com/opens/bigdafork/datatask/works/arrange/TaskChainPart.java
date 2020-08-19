@@ -21,7 +21,6 @@ public abstract class TaskChainPart implements IChainPart<TaskChainContext, Task
 
     @Override
     public TaskChainContext iDo(TaskChainContext chainContext) {
-        RecordBean recordBean = (RecordBean)chainContext.get(TaskChainContext.KEY_RECODE);
         try {
             RTask runnableTask =
                     (RTask)chainContext.get(TaskChainContext.KEY_RUN_TASK);
@@ -31,8 +30,8 @@ public abstract class TaskChainPart implements IChainPart<TaskChainContext, Task
             return chainContext;
         } catch (TaskFailException e) {
             // notify and stop.
-            recordBean.setNeedStop(true);
             this.finish(chainContext);
+            chainContext.setExitSys(true);
             throw e;
         }
     }
@@ -58,11 +57,10 @@ public abstract class TaskChainPart implements IChainPart<TaskChainContext, Task
      * @param chainContext
      */
     protected void pass2NextPart(TaskChainContext chainContext) {
-        RecordBean recordBean = (RecordBean)chainContext.get(TaskChainContext.KEY_RECODE);
         SubmitTaskInfo submitTaskInfo =
                 (SubmitTaskInfo)chainContext.get(TaskChainContext.KEY_SUBMIT_TASKINFO);
         chainContext.next(true);
-        recordBean.setNeedStop(false);
+        chainContext.setExitSys(false);
 
         RTask nextRunnableTask = taskRunnableBackend.getRunnableTaskByInfo(
                 submitTaskInfo.getAppName(),
