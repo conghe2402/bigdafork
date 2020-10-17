@@ -124,6 +124,7 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-yarn-client</artifactId>
         </dependency>
+
     </dependencies>
 
 </project>
