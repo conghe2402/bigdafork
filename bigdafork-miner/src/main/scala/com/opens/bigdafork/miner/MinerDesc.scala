@@ -1,10 +1,12 @@
 package com.opens.bigdafork.miner
 
-import com.opens.bigdafork.miner.MinerDesc.LostValFuncDesc
+import com.opens.bigdafork.miner.MinerDesc._
 import com.opens.bigdafork.miner.tools.lostvalue.{LostValFuncParams, LostValFuncTool}
+import com.opens.bigdafork.miner.tools.normalize.{NormFuncParams, NormalizerTool}
+import com.opens.bigdafork.miner.tools.scaler.{ScalerFuncParams, ScalerTool}
 
 /**
-  * The guideline of all kinkds of miner tools.
+  * The guideline of all kinds of miner tools.
   *
   */
 object MinerDesc {
@@ -19,32 +21,45 @@ object MinerDesc {
         // Additionally, define this attr relevant to the specific Miner Func Desc.
         def needParam() : LostValFuncParams = new LostValFuncParams()
 
-        def apply(debug : Boolean = false): MinerTool = getTool()
+        def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
     case object TFIDFFuncDesc extends MinerDesc {
         val name = "TF_IDF_func"
         val className = "LostValFuncTool"
+
     }
 
     case object NormalizerFuncDesc extends MinerDesc {
         val name = "normalizer_func"
-        val className = "LostValFuncTool"
+        val className = "NormalizerTool"
+
+        def needParam() : NormFuncParams = new NormFuncParams()
+        def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
     case object StandardScalerFuncDesc extends MinerDesc {
         val name = "standard_scaler_func"
-        val className = "LostValFuncTool"
+        val className = "ScalerTool"
+
+        def needParam() : ScalerFuncParams = new ScalerFuncParams()
+        def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
     case object MinMaxScalerFuncDesc extends MinerDesc {
         val name = "min_max_scaler_func"
-        val className = "LostValFuncTool"
+        val className = "ScalerTool"
+
+        def needParam() : ScalerFuncParams = new ScalerFuncParams()
+        def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
-    case object MaxAbsScalerFuncDesc extends MinerDesc {
-        val name = "max_abs_scaler_func"
-        val className = "LostValFuncTool"
+    case object ZIndexScalerFuncDesc extends MinerDesc {
+        val name = "z_index_scaler_func"
+        val className = "ScalerTool"
+
+        def needParam() : ScalerFuncParams = new ScalerFuncParams()
+        def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
     case object BinarizerFunc extends MinerDesc {
@@ -64,12 +79,20 @@ object MinerDesc {
 }
 
 object MinerBox {
-    def getMinerTool(minerDesc : MinerDesc, debug : Boolean = false) : MinerTool = minerDesc match {
-        case LostValFuncDesc => new LostValFuncTool(debug)
-        case _ => {
-            print("invalid")
-            null
+    def getMinerTool(minerDesc : MinerDesc, debugParam : Boolean = false) : MinerTool = {
+        implicit val debug = debugParam
+        minerDesc match {
+            case LostValFuncDesc => new LostValFuncTool
+            case NormalizerFuncDesc => new NormalizerTool
+            case StandardScalerFuncDesc => new ScalerTool
+            case MinMaxScalerFuncDesc => new ScalerTool
+            case ZIndexScalerFuncDesc => new ScalerTool
+            case _ => {
+                print("invalid")
+                null
+            }
         }
+
     }
 }
 

@@ -5,6 +5,9 @@ import com.opens.bigdafork.miner.MinerTool;
 import com.opens.bigdafork.miner.exception.MinerException;
 import com.opens.bigdafork.miner.tools.lostvalue.CorrectType;
 import com.opens.bigdafork.miner.tools.lostvalue.LostValFuncParams;
+import com.opens.bigdafork.miner.tools.normalize.NormFuncParams;
+import com.opens.bigdafork.miner.tools.scaler.ScalerFuncParams;
+import com.opens.bigdafork.miner.tools.scaler.ScalerType;
 import scala.Enumeration.Value;
 import scala.Tuple4;
 import scala.collection.Seq;
@@ -22,6 +25,22 @@ public final class JavaMinerDesc {
      */
     public static LostValFuncDescHelper getLostValFuncDescHelper() {
         return LostValFuncDescHelper.getInstance();
+    }
+
+    /**
+     * getNormFuncDesc.
+     * @return
+     */
+    public static NormlizerFuncDescHelper getNormFuncDescHelper() {
+        return NormlizerFuncDescHelper.getInstance();
+    }
+
+    /**
+     * getScalerFuncDesc.
+     * @return
+     */
+    public static ScalerFuncDescHelper getScalerFuncDescHelper() {
+        return ScalerFuncDescHelper.getInstance();
     }
 
     /**
@@ -89,6 +108,96 @@ public final class JavaMinerDesc {
         }
 
         private LostValFuncDescHelper() {}
+    }
+
+    /**
+     * Encapsulation of Norm Func Desc.
+     */
+    public static final class NormlizerFuncDescHelper {
+        private static final NormlizerFuncDescHelper INSTANCE = new NormlizerFuncDescHelper();
+
+        public MinerTool getNormFuncTool() {
+            return MinerDesc.NormalizerFuncDesc$.MODULE$.getTool();
+        }
+
+        public MinerTool getNormFuncTool(boolean debug) {
+            return MinerDesc.NormalizerFuncDesc$.MODULE$.getTool(debug);
+        }
+
+        public NormFuncParams needNormFuncToolParams() {
+            return MinerDesc.NormalizerFuncDesc$.MODULE$.needParam();
+        }
+
+        private static NormlizerFuncDescHelper getInstance() {
+            return INSTANCE;
+        }
+
+        private NormlizerFuncDescHelper() {}
+    }
+
+    /**
+     * Encapsulation of Scaler Func Desc.
+     */
+    public static final class ScalerFuncDescHelper {
+        private static final ScalerFuncDescHelper INSTANCE = new ScalerFuncDescHelper();
+
+        public static final String MIN_MAX = "0";
+        public static final String Z_INDEX = "1";
+        public static final String STANDARD = "2";
+
+        public MinerTool getStandardScalerFuncTool() {
+            return MinerDesc.StandardScalerFuncDesc$.MODULE$.getTool();
+        }
+
+        public MinerTool getStandardScalerFuncTool(boolean debug) {
+            return MinerDesc.StandardScalerFuncDesc$.MODULE$.getTool(debug);
+        }
+
+        public MinerTool getMinMaxScalerFuncTool() {
+            return MinerDesc.MinMaxScalerFuncDesc$.MODULE$.getTool();
+        }
+
+        public MinerTool getMinMaxScalerFuncTool(boolean debug) {
+            return MinerDesc.MinMaxScalerFuncDesc$.MODULE$.getTool(debug);
+        }
+
+        public MinerTool getZIndexScalerFuncTool() {
+            return MinerDesc.ZIndexScalerFuncDesc$.MODULE$.getTool();
+        }
+
+        public MinerTool getZIndexScalerFuncTool(boolean debug) {
+            return MinerDesc.ZIndexScalerFuncDesc$.MODULE$.getTool(debug);
+        }
+
+        public ScalerFuncParams needScalerFuncToolParams() {
+            return MinerDesc.StandardScalerFuncDesc$.MODULE$.needParam();
+        }
+
+        public void setScalerParams(MinerTool tool, ScalerFuncParams params, String scalerType) {
+            params.setScalerType(getScalerType(scalerType));
+            tool.setParams(params);
+        }
+
+        private static ScalerFuncDescHelper getInstance() {
+            return INSTANCE;
+        }
+
+        private Value getScalerType(String type) {
+            if (type.equals(MIN_MAX)) {
+                return ScalerType.MIN_MAX();
+            } else if (type.equals(Z_INDEX)){
+                return ScalerType.Z_INDEX();
+            } else if (type.equals(STANDARD)){
+                return ScalerType.STANDARD();
+            } else {
+                List<String> mesList = new ArrayList();
+                mesList.add(String.format("%s is not support.", type));
+
+                throw new MinerException((Seq<String>) mesList);
+            }
+        }
+
+        private ScalerFuncDescHelper() {}
     }
 
     private JavaMinerDesc() {}

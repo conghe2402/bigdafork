@@ -2,10 +2,10 @@ package com.opens.bigdafork.miner.tools.lostvalue
 
 import com.opens.bigdafork.miner.exception.MinerException
 import com.opens.bigdafork.miner.tools.lostvalue.CorrectType.CorrectType
-import com.opens.bigdafork.miner.{MTInput, MTOutput, MTParams, MinerTool}
+import com.opens.bigdafork.miner.{MTParams, MinerTool}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.functions.{coalesce, lit, nanvl, when, trim, round, avg}
-import org.apache.spark.sql.{Column, DataFrame, SaveMode}
+import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.hive.HiveContext
 import java.util.{List => JList}
@@ -17,21 +17,17 @@ import scala.collection.JavaConversions._
   * Tool.
   * drop -> lost value replace -> compute lost value -> fill.
   */
-class LostValFuncTool(debug : Boolean = false) extends MinerTool(debug) {
+class LostValFuncTool(implicit debug : Boolean = false) extends MinerTool(debug) {
 
     private var params: LostValFuncParams = null
-
-    private val sampleSize : Int = 20
 
     override def setParams(para: MTParams) : Unit = {
         this.params = para.asInstanceOf[LostValFuncParams]
     }
 
-    override def minerAction(sc: SparkContext, hc: HiveContext, input: MTInput, output: MTOutput): Unit = {
+    override def minerAction(sc: SparkContext, hc: HiveContext, inputDF: DataFrame): DataFrame = {
         // table
-        val sourceDF = loadSrc(sc, hc, input)
-        val cols = sourceDF.columns
-        val origSchema = sourceDF.schema
+        val cols = inputDF.columns
 
         // check
         assert (params.lostValueFuncDefSeq != null && !params.lostValueFuncDefSeq.isEmpty)
@@ -56,7 +52,7 @@ class LostValFuncTool(debug : Boolean = false) extends MinerTool(debug) {
         // return : no FillFunc or no lost value
         if (lostValueFillFuncList.isEmpty) {
             print("exit, no need to fill lost value")
-            return
+            return null
         }
 
         val replaceFields = lostValueFillFuncList.filter(t => {
@@ -67,32 +63,26 @@ class LostValFuncTool(debug : Boolean = false) extends MinerTool(debug) {
             println("no need to replace lost value.")
         }
 
-        var replaceDF = sourceDF
-        if (this.debug) {
-            println("original data: ")
-            replaceDF.take(sampleSize).foreach(x => {println(x.mkString(","))})
-        }
-
+        var replaceDF = inputDF
         for (f <- replaceFields) {
             println(s"replace lost value '${f._3}' of field ${f._2}")
-            getColType(sourceDF, f._2).dataType match {
+            getColType(inputDF, f._2).dataType match {
                 case StringType => {
                     replaceDF = replaceDF.withColumn(f._2,
-                        when(trim(sourceDF.col(addApos(f._2))) === f._3, null)
-                                 .otherwise(sourceDF.col(addApos(f._2))))
+                        when(trim(inputDF.col(addApos(f._2))) === f._3, null)
+                                 .otherwise(inputDF.col(addApos(f._2))))
                 }
                 case _ => {
                     replaceDF = replaceDF.withColumn(f._2,
-                        when(sourceDF.col(addApos(f._2)) === f._3, null)
-                                 .otherwise(sourceDF.col(addApos(f._2))))
+                        when(inputDF.col(addApos(f._2)) === f._3, null)
+                                 .otherwise(inputDF.col(addApos(f._2))))
                 }
             }
-
         }
 
         if (this.debug && replaceFields.size > 0) {
             println("replace data: ")
-            replaceDF.take(sampleSize).foreach(x => {println(x.mkString(","))})
+            printSampleData(replaceDF)
         }
 
         // calculate
@@ -117,7 +107,7 @@ class LostValFuncTool(debug : Boolean = false) extends MinerTool(debug) {
             m.+=((t._2 -> t._4))
         })
         val values = filedLostValueMap.foldRight[MMap[String, String]](MMap())((r, m) => {
-            //val colType = getColType(df, r._1)
+            // val colType = getColType(df, r._1)
             // The method to get statistics value depends on CorrectType.
             if (lostValFillFuncMap(r._1) == CorrectType.MEAN) {
                 m.+=((r._1 -> statistics.getDouble(statistics.fieldIndex(r._1)).toString))
@@ -130,20 +120,10 @@ class LostValFuncTool(debug : Boolean = false) extends MinerTool(debug) {
         // fill
         for (f <- lostValueFillFuncList) {
             replaceDF = replaceDF.withColumn(f._2,
-                fill(replaceDF, getColType(sourceDF, f._2), values.get(f._2).get))
+                fill(replaceDF, getColType(inputDF, f._2), values.get(f._2).get))
         }
 
-        if (debug) {
-            println("result data: ")
-            replaceDF.take(sampleSize).foreach(x => {println(x.mkString(","))})
-        }
-
-        println("output result...")
-        replaceDF.registerTempTable(s"temp_${output.dest}")
-        hc.sql(s"drop table if exists ${output.dest}")
-        hc.sql(s"create table if not exists ${output.dest} as select * from temp_${output.dest} limit 1")
-        hc.sql(s"truncate table ${output.dest}")
-        replaceDF.write.mode(SaveMode.Overwrite).insertInto(output.dest)
+        replaceDF
     }
 
     private def fill(df : DataFrame, col: StructField, replacement : String) : Column = {
