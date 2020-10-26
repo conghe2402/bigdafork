@@ -1,7 +1,7 @@
 package com.opens.bigdafork.miner.ability
 
 import org.apache.spark.SparkContext
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import org.apache.spark.mllib.linalg.{Vector, VectorUDT, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.HiveContext
@@ -12,7 +12,7 @@ import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
 private[opens]
-trait LibSVMHandleAware {
+trait TLibSVMAware {
     val libSVMHandler : TLibSVMHandleAware = LibSVMHandle
 }
 
@@ -20,6 +20,8 @@ sealed trait TLibSVMHandleAware extends Serializable {
 
     /**
       * Transfer normal format data to libSVM format.
+      * There are two data types of output :
+      * double type for fit data while String type for non-fit data.
       * @param inputDF
       * @param schemaField The field set is excluded from miner computation.
       * @return
@@ -42,6 +44,26 @@ sealed trait TLibSVMHandleAware extends Serializable {
                            keepFields : LinkedHashMap[Integer, String],
                            schema : StructType, toDense : Boolean = false)
                           (fun : Vector => Vector) : DataFrame
+
+
+    /**
+      * generate new StructType from orginal.
+      * @param schema
+      * @param keepFields
+      * @param format true : feature format cols
+      * @return
+      */
+    def genNewDataStructType(schema : StructType,
+      keepFields : mutable.LinkedHashMap[Integer, String], format : Boolean) : StructType
+
+
+    /**
+      * restore values' type from String value by order.
+      * @param schemaFields
+      * @param values
+      * @return
+      */
+    def restoreDataType(schemaFields : Array[StructField], values : Array[String]) : Array[Any]
 }
 
 private[opens]
@@ -116,6 +138,26 @@ object LibSVMHandle extends TLibSVMHandleAware {
                                     keepFields: mutable.LinkedHashMap[Integer, String],
                                     schema: StructType, toDense : Boolean = false)
                                    (fun : Vector => Vector) : DataFrame = {
+        val resultStructType = genNewDataStructType(schema, keepFields, false)
+        //vectors.collect().foreach(x => {for (xx <- x._1) {println(xx)}})
+        val normRDD = inputRDD.map(x => {(x._1, fun(toDense match {
+            case true => Vectors.dense(x._2.features.toArray)
+            case _ => x._2.features
+        }))}).map(x => {
+            Row(x._2.toArray.++:(restoreDataType(resultStructType.fields, x._1)) : _*)
+        })
+
+        println("result RDD:")
+        val sample = normRDD.take(10)
+        sample.foreach(x => {println(x.mkString(","))})
+        sample.foreach(x => {println(s"len : ${x.size} : st len : ${resultStructType.size}")})
+
+        hc.createDataFrame(normRDD, resultStructType)
+    }
+
+    override def genNewDataStructType(schema : StructType,
+                                      keepFields : mutable.LinkedHashMap[Integer, String],
+                                      format : Boolean) : StructType = {
         val fields = ArrayBuffer[StructField]()
         val schemaFields = schema.fields
         val normFields = ArrayBuffer[StructField]()
@@ -127,25 +169,17 @@ object LibSVMHandle extends TLibSVMHandleAware {
             }
         }
 
-        fields.++=(normFields)
-        val resultStructType = DataTypes.createStructType(fields.toArray)
-        //vectors.collect().foreach(x => {for (xx <- x._1) {println(xx)}})
-        val normRDD = inputRDD.map(x => {(x._1, fun(toDense match {
-            case true => Vectors.dense(x._2.features.toArray)
-            case _ => x._2.features
-        }))}).map(x => {
-            Row(x._2.toArray.++:(restoreDataType(fields.toArray, x._1)) : _*)
-        })
+        if (format) {
+            val vectorType = classOf[VectorUDT].newInstance()
+            fields.+=(DataTypes.createStructField("features", vectorType, true))
+        } else {
+            fields.++=(normFields)
+        }
 
-        println("result RDD:")
-        val sample = normRDD.take(10)
-        sample.foreach(x => {println(x.mkString(","))})
-        sample.foreach(x => {println(s"len : ${x.size} : st len : ${resultStructType.size}")})
-
-        hc.createDataFrame(normRDD, resultStructType)
+        DataTypes.createStructType(fields.toArray)
     }
 
-    private def restoreDataType(schemaFields : Array[StructField], values : Array[String]) : Array[Any] = {
+    def restoreDataType(schemaFields : Array[StructField], values : Array[String]) : Array[Any] = {
         val newFields = ArrayBuffer[Any]()
         for (i <- (0 to values.length - 1)) {
             schemaFields(i).dataType match {
@@ -157,4 +191,6 @@ object LibSVMHandle extends TLibSVMHandleAware {
         }
         newFields.toArray
     }
+
+
 }

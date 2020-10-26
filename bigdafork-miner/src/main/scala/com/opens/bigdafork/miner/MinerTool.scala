@@ -2,7 +2,7 @@ package com.opens.bigdafork.miner
 
 import java.util.Date
 
-import com.opens.bigdafork.miner.ability.LibSVMHandleAware
+import com.opens.bigdafork.miner.ability.{TDataFrameRowAware, TLibSVMAware}
 import com.opens.bigdafork.miner.exception.MinerException
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.hive.HiveContext
@@ -15,11 +15,12 @@ trait MinerHandleAware extends Serializable {
 }
 
 abstract class MinerTool(val debug : Boolean = false) extends MinerHandleAware
-                                                         with LibSVMHandleAware {
+                                                         with TLibSVMAware with TDataFrameRowAware {
     val TOOL_NAME = this.getClass.getSimpleName
     protected val sampleSize : Int = 20
 
     def setParams(para : MTParams) : Unit = {}
+
     def minerAction(sc : SparkContext, hc : HiveContext, input : DataFrame) : DataFrame
 
     protected def printSampleData(df : DataFrame) : Unit = {
