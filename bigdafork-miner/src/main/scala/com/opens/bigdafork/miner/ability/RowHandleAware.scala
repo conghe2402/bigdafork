@@ -26,13 +26,13 @@ sealed trait TRowHandleAware extends Serializable {
 private[opens]
 object RowHandleAware extends TRowHandleAware {
     /**
-      * A Row with a vector field flat map to row without any vector.
+      * A Row with a vector field flat maps to row without any vector.
       *
       * @param x
       * @return
       */
-    override def vectorRowFlatmapRow(x: Row, vName : String) = {
-        val y = x.schema.foldLeft(ArrayBuffer[Any]())((a, f) => {
+    override def vectorRowFlatmapRow(x: Row, vName: String) = {
+        Row(x.schema.foldLeft(ArrayBuffer[Any]())((a, f) => {
             if (f.dataType == IntegerType) {
                 a.+=(x.getInt(x.fieldIndex(f.name)))
             } else if (f.dataType == StringType) {
@@ -43,8 +43,7 @@ object RowHandleAware extends TRowHandleAware {
                 x.getAs[Vector](f.name).toArray.foreach(a.+=(_))
             }
             a
-        })
-        Row(y.toArray : _ *)
+        }).toArray : _ *)
 
     }
 }
