@@ -6,19 +6,21 @@ import com.opens.bigdafork.miner.{MTParams, MinerTool}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature.StandardScaler
 import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.functions.{abs, col, max, lit, udf}
 import org.apache.spark.sql.hive.HiveContext
 import java.util.{LinkedHashMap => JMap}
 
 import com.opens.bigdafork.miner.util.CollectionUtils
 import org.apache.spark.ml.feature.MinMaxScaler
+import org.apache.spark.sql.types.{DoubleType, StructField}
 
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
 /**
   * Three type scaler function.
-  * 1.Standard
+  * 1.Standard：z-score
   * 2.Min-Max
-  * 3.Z-index
+  * 3.Max-abs
   *
   * @param debug
   */
@@ -36,7 +38,7 @@ class ScalerTool(implicit debug : Boolean = false) extends MinerTool(debug) {
         val scalerAction = params.scalerType match {
             case ScalerType.MIN_MAX => new MinMaxScalerAction(params, debug)
             case ScalerType.STANDARD => new StandardScalerAction(params, debug)
-            case ScalerType.Z_INDEX => new ZIndexScalerAction(params, debug)
+            case ScalerType.MAX_ABS => new MaxAbsScalerAction(params, debug)
             case _ => throw new MinerException(Seq(s"The scaler type ${params.scalerType} is not support!"))
         }
 
@@ -71,6 +73,11 @@ case class ScalerFuncParams(var scalerType: ScalerType = ScalerType.STANDARD) ex
 
 }
 
+/**
+  * Z-score.
+  * @param params
+  * @param debug
+  */
 case class StandardScalerAction(params : ScalerFuncParams,
                                 override implicit val debug: Boolean = false) extends ScalerTool {
     override def minerAction(sc: SparkContext, hc: HiveContext, input: DataFrame): DataFrame = {
@@ -134,16 +141,47 @@ case class MinMaxScalerAction(params : ScalerFuncParams,
     }
 }
 
-case class ZIndexScalerAction(params : ScalerFuncParams,
-                              override implicit val debug: Boolean = false) extends ScalerTool {
-    override def minerAction(sc: SparkContext, hc: HiveContext, input: DataFrame): DataFrame = {
-        null
+/**
+  * MaxAbs.
+  * @param params
+  * @param debug
+  */
+case class MaxAbsScalerAction(params : ScalerFuncParams,
+                                override implicit val debug: Boolean = false) extends ScalerTool {
+    override def minerAction(sc: SparkContext, hc: HiveContext, input: DataFrame) : DataFrame = {
+        val fields = input.schema.fields
+        val fieldsAbs = fields.zipWithIndex.foldLeft(ArrayBuffer[(StructField, Boolean)]())((a, e) => {
+            a += ((e._1, params.noScalerField.get(e._2).isEmpty))
+        })
+
+        //query max abs value
+        val fieldsAbsArr = fieldsAbs.filter(_._2).map(x => x._1)
+        val colsAbsArr = fieldsAbsArr.map(x => {
+            max(abs(col(x.name).cast(DoubleType))).cast(DoubleType).as(x.name)
+        }).toArray
+
+        var maxAbsValues = input.select(colsAbsArr : _ *).collect().mkString(",")
+        if (debug) {
+            println(s"max abs values is : \n ${maxAbsValues}")
+        }
+        maxAbsValues = maxAbsValues.substring(1, maxAbsValues.length - 1)
+        val maxAbsValuesArr = maxAbsValues.split(",").map(x => {
+            if (x.toDouble == 0d) 1d else x.toDouble
+        }).zip(fieldsAbsArr)
+
+        var resultDF = input
+        for (fieldAndMAV <- maxAbsValuesArr) {
+            resultDF = resultDF.withColumn(fieldAndMAV._2.name, lit(col(fieldAndMAV._2.name) / fieldAndMAV._1))
+        }
+
+        resultDF
     }
 }
 
 object ScalerType extends Enumeration {
     type ScalerType = Value
-    val MIN_MAX = Value(0, "min-max")
-    val Z_INDEX = Value(1, "z-index")
-    val STANDARD = Value(2, "standard")
+    val STANDARD = Value(0, "standard")
+    val MIN_MAX = Value(1, "min-max")
+    val MAX_ABS = Value(2, "max-abs")
+
 }

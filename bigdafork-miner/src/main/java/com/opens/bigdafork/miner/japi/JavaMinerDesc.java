@@ -141,9 +141,9 @@ public final class JavaMinerDesc {
     public static final class ScalerFuncDescHelper {
         private static final ScalerFuncDescHelper INSTANCE = new ScalerFuncDescHelper();
 
-        public static final String MIN_MAX = "0";
-        public static final String Z_INDEX = "1";
-        public static final String STANDARD = "2";
+        public static final String STANDARD = "0";
+        public static final String MIN_MAX = "1";
+        public static final String MAX_ABS = "2";
 
         public MinerTool getStandardScalerFuncTool() {
             return MinerDesc.StandardScalerFuncDesc$.MODULE$.getTool();
@@ -161,12 +161,12 @@ public final class JavaMinerDesc {
             return MinerDesc.MinMaxScalerFuncDesc$.MODULE$.getTool(debug);
         }
 
-        public MinerTool getZIndexScalerFuncTool() {
-            return MinerDesc.ZIndexScalerFuncDesc$.MODULE$.getTool();
+        public MinerTool getMaxAbsScalerFuncTool() {
+            return MinerDesc.MaxAbsScalerFuncDesc$.MODULE$.getTool();
         }
 
-        public MinerTool getZIndexScalerFuncTool(boolean debug) {
-            return MinerDesc.ZIndexScalerFuncDesc$.MODULE$.getTool(debug);
+        public MinerTool getMaxAbsScalerFuncTool(boolean debug) {
+            return MinerDesc.MaxAbsScalerFuncDesc$.MODULE$.getTool(debug);
         }
 
         public ScalerFuncParams needScalerFuncToolParams() {
@@ -185,10 +185,10 @@ public final class JavaMinerDesc {
         private Value getScalerType(String type) {
             if (type.equals(MIN_MAX)) {
                 return ScalerType.MIN_MAX();
-            } else if (type.equals(Z_INDEX)){
-                return ScalerType.Z_INDEX();
             } else if (type.equals(STANDARD)){
                 return ScalerType.STANDARD();
+            } else if (type.equals(MAX_ABS)) {
+                return ScalerType.MAX_ABS();
             } else {
                 List<String> mesList = new ArrayList();
                 mesList.add(String.format("%s is not support.", type));

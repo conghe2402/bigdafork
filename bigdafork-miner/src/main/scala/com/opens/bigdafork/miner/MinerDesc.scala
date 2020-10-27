@@ -54,8 +54,8 @@ object MinerDesc {
         def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
-    case object ZIndexScalerFuncDesc extends MinerDesc {
-        val name = "z_index_scaler_func"
+    case object MaxAbsScalerFuncDesc extends MinerDesc {
+        val name = "max_abs_scaler_func"
         val className = "ScalerTool"
 
         def needParam() : ScalerFuncParams = new ScalerFuncParams()
@@ -86,7 +86,7 @@ object MinerBox {
             case NormalizerFuncDesc => new NormalizerTool
             case StandardScalerFuncDesc => new ScalerTool
             case MinMaxScalerFuncDesc => new ScalerTool
-            case ZIndexScalerFuncDesc => new ScalerTool
+            case MaxAbsScalerFuncDesc => new ScalerTool
             case _ => {
                 print("invalid")
                 null
