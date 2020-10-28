@@ -3,6 +3,7 @@ package com.opens.bigdafork.miner.japi;
 import com.opens.bigdafork.miner.MinerDesc;
 import com.opens.bigdafork.miner.MinerTool;
 import com.opens.bigdafork.miner.exception.MinerException;
+import com.opens.bigdafork.miner.tools.binary.BinarizerFuncParams;
 import com.opens.bigdafork.miner.tools.lostvalue.CorrectType;
 import com.opens.bigdafork.miner.tools.lostvalue.LostValFuncParams;
 import com.opens.bigdafork.miner.tools.normalize.NormFuncParams;
@@ -41,6 +42,14 @@ public final class JavaMinerDesc {
      */
     public static ScalerFuncDescHelper getScalerFuncDescHelper() {
         return ScalerFuncDescHelper.getInstance();
+    }
+
+    /**
+     * getBinarizerFuncDesc.
+     * @return
+     */
+    public static BinarizerFuncDescHelper getBinarizerFuncDescHelper() {
+        return BinarizerFuncDescHelper.getInstance();
     }
 
     /**
@@ -198,6 +207,31 @@ public final class JavaMinerDesc {
         }
 
         private ScalerFuncDescHelper() {}
+    }
+
+    /**
+     * Encapsulation of Binarizer Func Desc.
+     */
+    public static final class BinarizerFuncDescHelper {
+        private static final BinarizerFuncDescHelper INSTANCE = new BinarizerFuncDescHelper();
+
+        public MinerTool getBinarizerFuncTool() {
+            return MinerDesc.BinarizerFuncDesc$.MODULE$.getTool();
+        }
+
+        public MinerTool getBinarizerFuncTool(boolean debug) {
+            return MinerDesc.BinarizerFuncDesc$.MODULE$.getTool(debug);
+        }
+
+        public BinarizerFuncParams needBinarizerFuncToolParams() {
+            return MinerDesc.BinarizerFuncDesc$.MODULE$.needParam();
+        }
+
+        private static BinarizerFuncDescHelper getInstance() {
+            return INSTANCE;
+        }
+
+        private BinarizerFuncDescHelper() {}
     }
 
     private JavaMinerDesc() {}

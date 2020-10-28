@@ -1,6 +1,7 @@
 package com.opens.bigdafork.miner
 
 import com.opens.bigdafork.miner.MinerDesc._
+import com.opens.bigdafork.miner.tools.binary.{BinarizerFuncParams, BinarizerFuncTool}
 import com.opens.bigdafork.miner.tools.lostvalue.{LostValFuncParams, LostValFuncTool}
 import com.opens.bigdafork.miner.tools.normalize.{NormFuncParams, NormalizerTool}
 import com.opens.bigdafork.miner.tools.scaler.{ScalerFuncParams, ScalerTool}
@@ -62,12 +63,15 @@ object MinerDesc {
         def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
-    case object BinarizerFunc extends MinerDesc {
+    case object BinarizerFuncDesc extends MinerDesc {
         val name = "binarizer_func"
-        val className = "LostValFuncTool"
+        val className = "BinarizerFuncTool"
+
+        def needParam() : BinarizerFuncParams = new BinarizerFuncParams()
+        def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
-    case object BucketizerFunc extends MinerDesc {
+    case object BucketizerFuncDesc extends MinerDesc {
         val name = "bucketizer_func"
         val className = "LostValFuncTool"
     }
@@ -87,6 +91,7 @@ object MinerBox {
             case StandardScalerFuncDesc => new ScalerTool
             case MinMaxScalerFuncDesc => new ScalerTool
             case MaxAbsScalerFuncDesc => new ScalerTool
+            case BinarizerFuncDesc => new BinarizerFuncTool
             case _ => {
                 print("invalid")
                 null

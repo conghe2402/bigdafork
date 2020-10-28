@@ -194,7 +194,7 @@ class LostValFuncParams extends MTParams {
 object CorrectType extends Enumeration {
     type CorrectType = Value
     val MEAN = Value(0, "mean")
-    val MODE = Value(1, "node")
+    val MODE = Value(1, "mode")
     //val DROP_ROW = Value(1, "drop row")
     //val DROP_COL = Value(2, "drop col")
 }
