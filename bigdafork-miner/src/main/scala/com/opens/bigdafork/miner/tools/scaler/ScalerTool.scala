@@ -157,7 +157,7 @@ case class MaxAbsScalerAction(params : ScalerFuncParams,
         //query max abs value
         val fieldsAbsArr = fieldsAbs.filter(_._2).map(x => x._1)
         val colsAbsArr = fieldsAbsArr.map(x => {
-            max(abs(col(x.name).cast(DoubleType))).cast(DoubleType).as(x.name)
+            max(abs(col(addApos(x.name)).cast(DoubleType))).cast(DoubleType).as(x.name)
         }).toArray
 
         var maxAbsValues = input.select(colsAbsArr : _ *).collect().mkString(",")
@@ -171,7 +171,7 @@ case class MaxAbsScalerAction(params : ScalerFuncParams,
 
         var resultDF = input
         for (fieldAndMAV <- maxAbsValuesArr) {
-            resultDF = resultDF.withColumn(fieldAndMAV._2.name, lit(col(fieldAndMAV._2.name) / fieldAndMAV._1))
+            resultDF = resultDF.withColumn(fieldAndMAV._2.name, lit(col(addApos(fieldAndMAV._2.name)) / fieldAndMAV._1))
         }
 
         resultDF

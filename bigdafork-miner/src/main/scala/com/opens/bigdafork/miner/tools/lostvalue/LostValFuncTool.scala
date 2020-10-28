@@ -4,7 +4,7 @@ import com.opens.bigdafork.miner.exception.MinerException
 import com.opens.bigdafork.miner.tools.lostvalue.CorrectType.CorrectType
 import com.opens.bigdafork.miner.{MTParams, MinerTool}
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.functions.{coalesce, lit, nanvl, when, trim, round, avg}
+import org.apache.spark.sql.functions.{coalesce, lit, nanvl, when, trim, round, avg, max, countDistinct}
 import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.hive.HiveContext
@@ -194,6 +194,7 @@ class LostValFuncParams extends MTParams {
 object CorrectType extends Enumeration {
     type CorrectType = Value
     val MEAN = Value(0, "mean")
+    val MODE = Value(1, "node")
     //val DROP_ROW = Value(1, "drop row")
     //val DROP_COL = Value(2, "drop col")
 }
