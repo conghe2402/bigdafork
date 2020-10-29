@@ -4,7 +4,7 @@ import com.opens.bigdafork.miner.exception.MinerException
 import com.opens.bigdafork.miner.tools.lostvalue.CorrectType.CorrectType
 import com.opens.bigdafork.miner.{MTParams, MinerTool}
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.functions.{coalesce, lit, nanvl, when, trim, round, avg, max, countDistinct}
+import org.apache.spark.sql.functions.{coalesce, lit, nanvl, when, trim, round, avg}
 import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.hive.HiveContext
@@ -139,10 +139,10 @@ class LostValFuncTool(implicit debug : Boolean = false) extends MinerTool(debug)
         if (debug) println(s"fill value ${replacement} in col ${col.name}")
         col.dataType match {
             case DoubleType | FloatType =>
-                coalesce(nanvl(df.col("`" + col.name + "`"), lit(null)),
+                coalesce(nanvl(df.col(addApos(col.name)), lit(null)),
                     lit(replacement).cast(col.dataType)).as(col.name)
             case _ =>
-                coalesce(df.col("`" + col.name + "`"),
+                coalesce(df.col(addApos(col.name)),
                     lit(replacement).cast(col.dataType)).as(col.name)
 
         }

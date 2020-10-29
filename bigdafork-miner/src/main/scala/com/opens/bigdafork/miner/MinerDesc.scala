@@ -2,6 +2,7 @@ package com.opens.bigdafork.miner
 
 import com.opens.bigdafork.miner.MinerDesc._
 import com.opens.bigdafork.miner.tools.binary.{BinarizerFuncParams, BinarizerFuncTool}
+import com.opens.bigdafork.miner.tools.bucetizer.{BucketizerFuncParams, BucketizerTool}
 import com.opens.bigdafork.miner.tools.lostvalue.{LostValFuncParams, LostValFuncTool}
 import com.opens.bigdafork.miner.tools.normalize.{NormFuncParams, NormalizerTool}
 import com.opens.bigdafork.miner.tools.scaler.{ScalerFuncParams, ScalerTool}
@@ -23,12 +24,6 @@ object MinerDesc {
         def needParam() : LostValFuncParams = new LostValFuncParams()
 
         def apply(debug : Boolean = false) : MinerTool = getTool(debug)
-    }
-
-    case object TFIDFFuncDesc extends MinerDesc {
-        val name = "TF_IDF_func"
-        val className = "LostValFuncTool"
-
     }
 
     case object NormalizerFuncDesc extends MinerDesc {
@@ -73,12 +68,21 @@ object MinerDesc {
 
     case object BucketizerFuncDesc extends MinerDesc {
         val name = "bucketizer_func"
-        val className = "LostValFuncTool"
+        val className = "BucketizerTool"
+
+        def needParam() : BucketizerFuncParams = new BucketizerFuncParams()
+        def apply(debug : Boolean = false) : MinerTool = getTool(debug)
     }
 
     case object RemoveColsFuncDesc extends MinerDesc {
         val name = "remove_cols_func"
         val className = "LostValFuncTool"
+    }
+
+    case object TFIDFFuncDesc extends MinerDesc {
+        val name = "TF_IDF_func"
+        val className = "LostValFuncTool"
+
     }
 }
 
@@ -92,6 +96,7 @@ object MinerBox {
             case MinMaxScalerFuncDesc => new ScalerTool
             case MaxAbsScalerFuncDesc => new ScalerTool
             case BinarizerFuncDesc => new BinarizerFuncTool
+            case BucketizerFuncDesc => new BucketizerTool
             case _ => {
                 print("invalid")
                 null

@@ -29,7 +29,7 @@ class BinarizerFuncTool (implicit debug : Boolean = false) extends MinerTool(deb
             binarizer.setInputCol(f._2).setOutputCol(s"${f._2}_${f._1}")
             dataFrame = binarizer.transform(dataFrame)
                                  .withColumn(f._2, col(s"${f._2}_${f._1}"))
-                                 .drop(col(s"${f._2}_${f._1}"))
+                                 .drop(s"${f._2}_${f._1}")
         }
 
         dataFrame

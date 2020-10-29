@@ -10,7 +10,6 @@ import scala.collection.mutable.LinkedHashMap
 import java.util.{LinkedHashMap => JMap}
 
 import com.opens.bigdafork.miner.util.CollectionUtils
-import scala.collection.JavaConverters._
 
 /**
   * Lp norm. Row-Normalize is for making every row have the same unit norm, that means

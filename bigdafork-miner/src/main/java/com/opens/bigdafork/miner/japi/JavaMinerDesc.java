@@ -4,16 +4,21 @@ import com.opens.bigdafork.miner.MinerDesc;
 import com.opens.bigdafork.miner.MinerTool;
 import com.opens.bigdafork.miner.exception.MinerException;
 import com.opens.bigdafork.miner.tools.binary.BinarizerFuncParams;
+import com.opens.bigdafork.miner.tools.bucetizer.BucketizerFuncParams;
 import com.opens.bigdafork.miner.tools.lostvalue.CorrectType;
 import com.opens.bigdafork.miner.tools.lostvalue.LostValFuncParams;
 import com.opens.bigdafork.miner.tools.normalize.NormFuncParams;
 import com.opens.bigdafork.miner.tools.scaler.ScalerFuncParams;
 import com.opens.bigdafork.miner.tools.scaler.ScalerType;
+
+import org.apache.commons.beanutils.ConvertUtils;
 import scala.Enumeration.Value;
 import scala.Tuple4;
+import scala.Tuple5;
 import scala.collection.Seq;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -52,6 +57,13 @@ public final class JavaMinerDesc {
         return BinarizerFuncDescHelper.getInstance();
     }
 
+    /**
+     * getBucketizerFuncDescHelper.
+     * @return
+     */
+    public static BucketizerFuncDescHelper getBucketizerFuncDescHelper() {
+        return BucketizerFuncDescHelper.getInstance();
+    }
     /**
      * Encapsulation of Lost Value Func Desc.
      */
@@ -232,6 +244,61 @@ public final class JavaMinerDesc {
         }
 
         private BinarizerFuncDescHelper() {}
+    }
+
+    /**
+     * Encapsulation of Lost Value Func Desc.
+     */
+    public static final class BucketizerFuncDescHelper {
+        private static final BucketizerFuncDescHelper INSTANCE = new BucketizerFuncDescHelper();
+
+        public MinerTool getBucketizerFuncTool() {
+            return MinerDesc.BucketizerFuncDesc$.MODULE$.getTool();
+        }
+
+        public MinerTool getBucketizerFuncTool(boolean debug) {
+            return MinerDesc.BucketizerFuncDesc$.MODULE$.getTool(debug);
+        }
+
+        public BucketizerFuncParams needBucketizerFuncToolParams() {
+            return MinerDesc.BucketizerFuncDesc$.MODULE$.needParam();
+        }
+
+        /**
+         * setBucketizerFuncToolParams.
+         * @param tool
+         * @param params
+         * @param bucketizerFuncDefList List<String[]> :
+         *         {[col_id, col_name, splits string split by ',', down bound, up bound]}
+         *          col_id is number , its value is based on zero.
+         */
+        public void setBucketizerFuncToolParams(MinerTool tool,
+                                                BucketizerFuncParams params,
+                                                List<String[]> bucketizerFuncDefList) {
+            if (bucketizerFuncDefList == null || bucketizerFuncDefList.size() <= 0) {
+                return;
+            }
+
+            List<Tuple5<Integer, String, List<Double>, Boolean, Boolean>> paramsList
+                    = new ArrayList<>(bucketizerFuncDefList.size());
+            for (int i = 0; i < bucketizerFuncDefList.size(); i++) {
+                String[] splitStrArr = bucketizerFuncDefList.get(i)[2].split(",");
+                Arrays.sort(splitStrArr);
+                List<Double> splits = Arrays.asList((Double[])ConvertUtils.convert(splitStrArr, Double.class));
+                paramsList.add(new Tuple5(Integer.parseInt(bucketizerFuncDefList.get(i)[0]),
+                        bucketizerFuncDefList.get(i)[1],
+                        splits,
+                        Boolean.valueOf(bucketizerFuncDefList.get(i)[3]),
+                        Boolean.valueOf(bucketizerFuncDefList.get(i)[4])));
+            }
+
+            params.setJBuckFields(paramsList);
+            tool.setParams(params);
+        }
+
+        private static BucketizerFuncDescHelper getInstance() {
+            return INSTANCE;
+        }
     }
 
     private JavaMinerDesc() {}
